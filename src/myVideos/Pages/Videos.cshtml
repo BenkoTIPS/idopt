@@ -1,0 +1,52 @@
+﻿@page
+@model VideosModel
+@{
+    ViewData["Title"] = "Video Player";
+}
+
+<h1>Video Player</h1>
+
+<div>
+    <select id="videoSelect" asp-items="@(new SelectList(Model.VideoNames))"></select>
+    <video style="width:100%" id="videoPlayer" type="video/mp4" controls>
+        Your browser does not support the video tag.
+    </video>
+</div>
+
+@section scripts {
+    <script>
+        var videoPlayer = document.getElementById("videoPlayer");
+        var videoSelect = document.getElementById("videoSelect");
+
+        // Auto-play first video when page loads
+        window.addEventListener("load", function () {
+            if (videoSelect.options.length > 0) {
+                videoSelect.selectedIndex = 0;
+                playSelectedVideo();
+            }
+        });
+
+        // Play next video when current one ends
+        videoPlayer.addEventListener("ended", function () {
+            var currentIndex = videoSelect.selectedIndex;
+            if (currentIndex < videoSelect.options.length - 1) {
+                videoSelect.selectedIndex = currentIndex + 1;
+                playSelectedVideo();
+            }
+        });
+
+        videoSelect.addEventListener("change", function () {
+            playSelectedVideo();
+        });
+
+        function playSelectedVideo() {
+            var selectedVideo = videoSelect.value;
+            if (selectedVideo) {
+                var videoUrl = "/Videos?handler=StreamVideo&videoName=" + selectedVideo + "&container=@Model.ContainerName";
+                videoPlayer.src = videoUrl;
+                videoPlayer.load();
+                videoPlayer.play();
+            }
+        }
+    </script>
+}

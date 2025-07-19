@@ -1,0 +1,61 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build",
+			"command": "dotnet",
+			"type": "process",
+			"args": [
+				"build",
+				"${workspaceFolder}/src/myVideos/myVideos.csproj",
+				"/property:GenerateFullPaths=true",
+				"/consoleloggerparameters:NoSummary"
+			],
+			"problemMatcher": "$msCompile",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "Start Azurite Storage Emulator",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"azurite@latest",
+				"--silent",
+				"--location",
+				"${workspaceFolder}/.azurite",
+				"--debug",
+				"${workspaceFolder}/.azurite/debug.log",
+				"--skipApiVersionCheck"
+			],
+			"group": "build",
+			"isBackground": true,
+			"dependsOn": "build",
+			"problemMatcher": {
+				"pattern": [
+					{
+						"regexp": ".",
+						"file": 1,
+						"location": 2,
+						"message": 3
+					}
+				],
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": ".",
+					"endsPattern": "."
+				}
+			},
+			"presentation": {
+				"echo": false,
+				"reveal": "silent",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": false
+			}
+		}
+	]
+}

@@ -1,0 +1,47 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch myVideos",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "Start Azurite Storage Emulator",
+            "program": "${workspaceFolder}/src/myVideos/bin/Debug/net10.0/myVideos.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/myVideos",
+            "stopAtEntry": false,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_URLS": "https://localhost:7260;http://localhost:5176"
+            },
+            "sourceFileMap": {
+                "/Views": "${workspaceFolder}/src/myVideos/Views"
+            }
+        },
+        {
+            "name": "Launch myVideos (HTTP only)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "Start Azurite Storage Emulator",
+            "program": "${workspaceFolder}/src/myVideos/bin/Debug/net10.0/myVideos.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/myVideos",
+            "stopAtEntry": false,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_URLS": "http://localhost:5176"
+            },
+            "sourceFileMap": {
+                "/Views": "${workspaceFolder}/src/myVideos/Views"
+            }
+        }
+    ]
+}

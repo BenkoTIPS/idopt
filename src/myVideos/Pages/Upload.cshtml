@@ -1,0 +1,34 @@
+@page
+@model UploadModel
+@{
+    ViewData["Title"] = "Upload Video";
+}
+
+<h1>Upload Video</h1>
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <p style="color: green;">@Model.Message</p>
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <p style="color: red;">@Model.ErrorMessage</p>
+}
+
+<form method="post" enctype="multipart/form-data">
+    <div>
+        <label asp-for="VideoFile">Video File:</label>
+        <input asp-for="VideoFile" type="file" accept="video/*">
+        <span asp-validation-for="VideoFile" style="color: red;"></span>
+    </div>
+    <br>
+    <div>
+        <button type="submit">Upload</button>
+        <a href="/Videos">Back to Videos</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

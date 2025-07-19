@@ -1,0 +1,273 @@
+@page
+@model VideosModel
+@{
+    ViewData["Title"] = "Video Player";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="fas fa-video me-2"></i>Video Player
+                </h1>
+                <a href="/Upload" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Upload Video
+                </a>
+            </div>
+
+            @if (!Model.VideoNames.Any())
+            {
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>No videos found!</strong> 
+                    <a href="/Upload" class="alert-link">Upload your first video</a> to get started.
+                </div>
+            }
+            else
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <label for="videoSelect" class="form-label mb-0">
+                                    <i class="fas fa-list me-2"></i>Select Video:
+                                </label>
+                            </div>
+                            <div class="col-md-5">
+                                <select class="form-select" id="videoSelect" asp-items="@(new SelectList(Model.VideoNames))">
+                                    <option value="">Choose a video...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="prevBtn" title="Previous Video">
+                                        <i class="fas fa-step-backward"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="nextBtn" title="Next Video">
+                                        <i class="fas fa-step-forward"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <video 
+                            style="width: 100%; max-height: 70vh;" 
+                            id="videoPlayer" 
+                            controls 
+                            preload="metadata"
+                            poster="">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div id="videoInfo" class="p-3 bg-light" style="display: none;">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <small class="text-muted">
+                                        <i class="fas fa-play-circle me-2"></i>
+                                        Now playing: <span id="currentVideoName"></span>
+                                    </small>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <small class="text-muted">
+                                        <i class="fas fa-list-ol me-1"></i>
+                                        <span id="playlistProgress">1 of 1</span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <h5>Available Videos (@Model.VideoNames.Count())</h5>
+                    <div class="row">
+                        @foreach (var video in Model.VideoNames)
+                        {
+                            <div class="col-md-4 col-sm-6 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body d-flex flex-column">
+                                        <h6 class="card-title">
+                                            <i class="fas fa-file-video me-2"></i>
+                                            @video
+                                        </h6>
+                                        <div class="mt-auto">
+                                            <button class="btn btn-sm btn-outline-primary play-video-btn" data-video="@video">
+                                                <i class="fas fa-play me-1"></i>Play
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var videoPlayer = document.getElementById("videoPlayer");
+            var videoSelect = document.getElementById("videoSelect");
+            var videoInfo = document.getElementById("videoInfo");
+            var currentVideoName = document.getElementById("currentVideoName");
+            var playlistProgress = document.getElementById("playlistProgress");
+            
+            // Create playlist from available videos
+            var playlist = [
+                @foreach (var video in Model.VideoNames)
+                {
+                    <text>"@Html.Raw(video.Replace("\"", "\\\""))",</text>
+                }
+            ];
+            var currentVideoIndex = 0;
+
+            function loadVideo(videoName, autoPlay = false) {
+                if (!videoName) {
+                    videoPlayer.src = "";
+                    videoInfo.style.display = "none";
+                    return;
+                }
+
+                var videoUrl = "/Player?handler=StreamVideo&videoName=" + encodeURIComponent(videoName) + "&container=@Model.ContainerName";
+                videoPlayer.src = videoUrl;
+                currentVideoName.textContent = videoName;
+                playlistProgress.textContent = (currentVideoIndex + 1) + " of " + playlist.length;
+                videoInfo.style.display = "block";
+                
+                videoPlayer.load();
+                
+                if (autoPlay) {
+                    videoPlayer.play().catch(function(error) {
+                        console.log('Auto-play prevented by browser:', error);
+                    });
+                }
+            }
+
+            function loadVideoByIndex(index, autoPlay = false) {
+                if (index >= 0 && index < playlist.length) {
+                    currentVideoIndex = index;
+                    var videoName = playlist[index];
+                    videoSelect.value = videoName;
+                    loadVideo(videoName, autoPlay);
+                    
+                    // Update play buttons visual state
+                    updatePlayButtonStates(videoName);
+                }
+            }
+
+            function playNextVideo() {
+                if (currentVideoIndex < playlist.length - 1) {
+                    loadVideoByIndex(currentVideoIndex + 1, true);
+                } else {
+                    console.log('Playlist completed - no more videos');
+                    // Optionally restart from beginning
+                    // loadVideoByIndex(0, true);
+                }
+            }
+
+            function updatePlayButtonStates(currentVideo) {
+                document.querySelectorAll('.play-video-btn').forEach(function(btn) {
+                    var videoName = btn.getAttribute('data-video');
+                    if (videoName === currentVideo) {
+                        btn.innerHTML = '<i class="fas fa-pause me-1"></i>Playing';
+                        btn.classList.remove('btn-outline-primary');
+                        btn.classList.add('btn-primary');
+                    } else {
+                        btn.innerHTML = '<i class="fas fa-play me-1"></i>Play';
+                        btn.classList.remove('btn-primary');
+                        btn.classList.add('btn-outline-primary');
+                    }
+                });
+                
+                // Update prev/next button states
+                var prevBtn = document.getElementById('prevBtn');
+                var nextBtn = document.getElementById('nextBtn');
+                
+                prevBtn.disabled = (currentVideoIndex === 0);
+                nextBtn.disabled = (currentVideoIndex === playlist.length - 1);
+            }
+
+            // Load first video automatically if available and start playing
+            @if (Model.VideoNames.Any())
+            {
+                <text>
+                if (playlist.length > 0) {
+                    loadVideoByIndex(0, true); // Auto-play first video
+                }
+                </text>
+            }
+
+            // Handle dropdown selection
+            videoSelect.addEventListener("change", function () {
+                var selectedVideo = videoSelect.value;
+                var index = playlist.indexOf(selectedVideo);
+                if (index !== -1) {
+                    loadVideoByIndex(index, false);
+                }
+            });
+
+            // Handle previous/next buttons
+            document.getElementById('prevBtn').addEventListener('click', function() {
+                if (currentVideoIndex > 0) {
+                    loadVideoByIndex(currentVideoIndex - 1, true);
+                }
+            });
+
+            document.getElementById('nextBtn').addEventListener('click', function() {
+                if (currentVideoIndex < playlist.length - 1) {
+                    loadVideoByIndex(currentVideoIndex + 1, true);
+                }
+            });
+
+            // Handle play buttons in video grid
+            document.querySelectorAll('.play-video-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var videoName = this.getAttribute('data-video');
+                    var index = playlist.indexOf(videoName);
+                    if (index !== -1) {
+                        loadVideoByIndex(index, true);
+                        
+                        // Scroll to video player
+                        videoPlayer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            });
+
+            // Handle video errors
+            videoPlayer.addEventListener('error', function(e) {
+                console.error('Video error:', e);
+                alert('Error loading video. Please try again or select a different video.');
+            });
+
+            // Auto-play when video loads
+            videoPlayer.addEventListener('loadeddata', function() {
+                // Video is ready, will auto-play based on loadVideo autoPlay parameter
+            });
+
+            // Auto-advance to next video when current video ends
+            videoPlayer.addEventListener('ended', function() {
+                console.log('Video ended, playing next video...');
+                playNextVideo();
+            });
+
+            // Update button states when video starts playing
+            videoPlayer.addEventListener('play', function() {
+                var currentVideo = playlist[currentVideoIndex];
+                updatePlayButtonStates(currentVideo);
+            });
+
+            // Update button states when video is paused
+            videoPlayer.addEventListener('pause', function() {
+                document.querySelectorAll('.play-video-btn').forEach(function(btn) {
+                    btn.innerHTML = '<i class="fas fa-play me-1"></i>Play';
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-outline-primary');
+                });
+            });
+        });
+    </script>
+}
