@@ -41,8 +41,3 @@ Demo each
 Comparison
 Next Steps
 
-
-## Notes from TM
-
-- Define up front difference between Identity and Security and setup our conversation about Identity
-- Have fun 
