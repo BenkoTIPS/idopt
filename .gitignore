@@ -1,0 +1,6 @@
+bin
+obj
+.azurite
+*.user
+*.suo
+.temp
