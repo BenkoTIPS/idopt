@@ -3,6 +3,14 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorPages();
 
+// Add Authentication
+builder.Services.AddAuthentication("CookieAuth")
+    .AddCookie("CookieAuth", options =>
+    {
+        options.LoginPath = "/myLogin";
+        options.LogoutPath = "/myLogin";
+    });
+
 // Register Azure Blob Storage Service
 builder.Services.AddSingleton<AzureBlobStorageService>(provider =>
 {
@@ -25,6 +33,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();

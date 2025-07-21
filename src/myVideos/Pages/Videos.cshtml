@@ -6,6 +6,15 @@
 
 <h1>Video Player</h1>
 
+    @if (User.Identity.IsAuthenticated)
+    {
+        <h1 class="display-4">Welcome <b>@User.Identity.Name</b></h1>
+    }
+    else
+    {
+        <h1 class="display-4"><a href="myLogin">Login</a> to see more</h1>
+    }
+
 <div>
     <select id="videoSelect" asp-items="@(new SelectList(Model.VideoNames))"></select>
     <video style="width:100%" id="videoPlayer" type="video/mp4" controls>

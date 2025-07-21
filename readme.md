@@ -1,14 +1,31 @@
-# BenkoTIPS - Identity Session
+# BNK25 - Identity Session
 
 In the today's crazy world of exploits, hacker tricks and rapidly changing landscape of technology tools and techniques, choosing the right identity and access management solution is critical for securing applications and providing seamless user experiences. With so many options to choose from, like Azure Active Directory B2C, Azure Easy Auth, Keycloak, IdentityServer, Okta, among others, it can be challenging to determine the best fit for your application's needs. How do they work? How are they different? Where did they come from and how do I pick the right one? In this session we will explore the options, demo how they work, and discuss how to make the right choice for your application.
 
-## Outline
+## Development Setup
 
-Why are we here?
+### Prerequisites
 
-- I've got an app that I upload a video to a storage account and want to share it
-- Would be cool to let people comment and like, but I'd need to know who they are
-- I don't want to get hacked, what do I do?
+- .NET 9.0 SDK
+- Node.js and npm (for Azurite storage emulator)
+- Visual Studio Code
+
+### Quick Start
+
+1. Press **F5** in VS Code to start debugging
+2. The Azurite storage emulator will start automatically if not already running
+3. Your application will launch at `https://localhost:7260`
+
+### How It Works
+
+When you press F5:
+
+1. VS Code builds your project
+2. Starts the Azurite storage emulator in the background (using `.azurite` folder)
+3. Launches your myVideos application
+4. Opens your browser automatically
+
+The Azurite emulator will continue running in the background for subsequent debugging sessions.
 
 ## Demos
 

@@ -22,17 +22,30 @@ start powerpnt.exe docs/bnk25-identity.pptx
 ## Deploy to Azure - Use az webapp up to deploy to Azure
 az login --use-device-code
 
-# deploy infrastructure - ARM template
-$deploy = az deployment sub create --location centralUs --template-file infra/arm/main.bicep
+$appName = "idopt"
+$envName = "conf"
+$rgName = "$envName-$appName-rg"
+$siteName = "$envName-$appName-site"
+$planName = "$envName-$appName-plan"
+
+# deploy infrastructure - Bicep templates
+$envName = "poc"
+$sharedDeploy = az deployment sub create --location centralus --template-file infra/bicep/shared.bicep --parameters envName=$envName
+
+$mainDeploy = az deployment sub create --location centralUs --template-file infra/bicep/main.bicep --parameters envName=$envName appName=$appName 
+
 
 # Extract outputs from deployment
-$values = $deploy | ConvertFrom-Json
+$values = $mainDeploy | ConvertFrom-Json
 $siteName = $values.properties.outputs.siteName.value
 $planName = $values.properties.outputs.planName.value
 $rgName = $values.properties.outputs.rgName.value
-$slotNames = @("sql", "Easy", "B2C", "Keycloak", "Ids")
 
-# Change to the project directory for deployment
-cd src/myVideos
-az webapp up -b --name $siteName --resource-group $rgName --plan $planName
-cd ../..
+## build the app
+dotnet publish src/myVideos -c Release -o src/myVideos/bin/publish
+mkdir src/myVideos/bin/deploy -Force
+Compress-Archive -Path src/myVideos/bin/publish\* -DestinationPath src/myVideos/bin/deploy/MyVideos.zip -Force
+## Deploy the application
+az webapp deploy --resource-group $rgName --name $siteName --src-path src/myVideos/bin/deploy/MyVideos.zip --type zip
+
+

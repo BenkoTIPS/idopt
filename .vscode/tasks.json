@@ -18,6 +18,26 @@
 			}
 		},
 		{
+			"label": "Check and Start Azurite",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-ExecutionPolicy", "Bypass",
+				"-File", "${workspaceFolder}/scripts/start-azurite.ps1",
+				"-WorkspaceFolder", "${workspaceFolder}"
+			],
+			"group": "build",
+			"dependsOn": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "silent",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": false
+			}
+		},
+		{
 			"label": "Start Azurite Storage Emulator",
 			"type": "shell",
 			"command": "npx",
@@ -32,20 +52,17 @@
 			],
 			"group": "build",
 			"isBackground": true,
-			"dependsOn": "build",
 			"problemMatcher": {
-				"pattern": [
-					{
-						"regexp": ".",
-						"file": 1,
-						"location": 2,
-						"message": 3
-					}
-				],
+				"pattern": {
+					"regexp": "^(.*)$",
+					"file": 1,
+					"location": 2,
+					"message": 3
+				},
 				"background": {
 					"activeOnStart": true,
-					"beginsPattern": ".",
-					"endsPattern": "."
+					"beginsPattern": "^.*$",
+					"endsPattern": "^.*$"
 				}
 			},
 			"presentation": {

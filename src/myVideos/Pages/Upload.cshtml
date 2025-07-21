@@ -6,6 +6,15 @@
 
 <h1>Upload Video</h1>
 
+    @if (User.Identity.IsAuthenticated)
+    {
+        <h1 class="display-4">Welcome <b>@User.Identity.Name</b></h1>
+    }
+    else
+    {
+        <h1 class="display-4"><a href="myLogin">Login</a> to see more</h1>
+    }
+
 @if (!string.IsNullOrEmpty(Model.Message))
 {
     <p style="color: green;">@Model.Message</p>

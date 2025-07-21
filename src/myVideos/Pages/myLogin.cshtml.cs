@@ -36,7 +36,7 @@ namespace MyApp.Namespace
             await HttpContext.SignInAsync("CookieAuth", principal);
 
             // Redirect to a protected page (e.g., Index)
-            return RedirectToPage("/Uploads");
+            return RedirectToPage("/Index");
         }
 
         public async Task<IActionResult> OnPostLogoutAsync()
