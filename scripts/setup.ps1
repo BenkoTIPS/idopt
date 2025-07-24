@@ -23,16 +23,16 @@ start powerpnt.exe docs/bnk25-identity.pptx
 az login --use-device-code
 
 $appName = "idopt"
-$envName = "conf"
+$envName = "cnf"
 $rgName = "$envName-$appName-rg"
 $siteName = "$envName-$appName-site"
-$planName = "$envName-$appName-plan"
+$planName = "$envName-shared-plan"
 
 # deploy infrastructure - Bicep templates
-$envName = "poc"
+$envName = "bnk"
 $sharedDeploy = az deployment sub create --location centralus --template-file infra/bicep/shared.bicep --parameters envName=$envName
 
-$mainDeploy = az deployment sub create --location centralUs --template-file infra/bicep/main.bicep --parameters envName=$envName appName=$appName 
+$mainDeploy = az deployment sub create --location centralUs --template-file infra/bicep/idopt.bicep --parameters envName=$envName 
 
 
 # Extract outputs from deployment
@@ -48,4 +48,5 @@ Compress-Archive -Path src/myVideos/bin/publish\* -DestinationPath src/myVideos/
 ## Deploy the application
 az webapp deploy --resource-group $rgName --name $siteName --src-path src/myVideos/bin/deploy/MyVideos.zip --type zip
 
+# 
 

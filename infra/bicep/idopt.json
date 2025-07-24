@@ -1,0 +1,1900 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "languageVersion": "2.0",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.36.177.2456",
+      "templateHash": "3858794743719978663"
+    }
+  },
+  "parameters": {
+    "envName": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "appName": "idopt",
+    "loc": "CentralUS",
+    "rgName": "[format('{0}-{1}-rg', parameters('envName'), variables('appName'))]",
+    "sharedRgName": "[format('{0}-shared-rg', parameters('envName'))]",
+    "sqlServerName": "[format('{0}-{1}-sql', parameters('envName'), variables('appName'))]",
+    "sqlDatabaseName": "[format('{0}-{1}-db', parameters('envName'), variables('appName'))]",
+    "siteName": "[format('{0}-{1}-site', parameters('envName'), variables('appName'))]",
+    "storageName": "[format('{0}store', toLower(replace(format('{0}{1}', parameters('envName'), variables('appName')), '-', '')))]",
+    "appInsightsName": "[format('{0}-{1}-insights', parameters('envName'), variables('appName'))]",
+    "storageSecretName": "[format('storage-connection-{0}-{1}', parameters('envName'), variables('appName'))]",
+    "sqlAdminPasswordSecretName": "[format('sql-admin-password-{0}-{1}', parameters('envName'), variables('appName'))]",
+    "sqlConnectionSecretName": "[format('sql-connection-{0}-{1}', parameters('envName'), variables('appName'))]"
+  },
+  "resources": {
+    "sharedRg": {
+      "existing": true,
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2021-04-01",
+      "name": "[variables('sharedRgName')]"
+    },
+    "existingPlan": {
+      "existing": true,
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2020-12-01",
+      "resourceGroup": "[variables('sharedRgName')]",
+      "name": "[format('{0}-shared-plan', parameters('envName'))]"
+    },
+    "existingLogAnalytics": {
+      "existing": true,
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2021-06-01",
+      "resourceGroup": "[variables('sharedRgName')]",
+      "name": "[format('{0}-shared-logs', parameters('envName'))]"
+    },
+    "existingSharedKeyVault": {
+      "existing": true,
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2021-04-01-preview",
+      "resourceGroup": "[variables('sharedRgName')]",
+      "name": "[format('{0}-shared-kv', parameters('envName'))]"
+    },
+    "rg": {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2021-04-01",
+      "name": "[variables('rgName')]",
+      "location": "[variables('loc')]"
+    },
+    "sqlServer": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "sqlServerDeployment",
+      "resourceGroup": "[variables('rgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "serverName": {
+            "value": "[variables('sqlServerName')]"
+          },
+          "location": {
+            "value": "[variables('loc')]"
+          },
+          "sqlAdminPassword": {
+            "value": "[format('P@ssw0rd123!{0}', uniqueString(parameters('envName'), variables('appName'), subscription().subscriptionId))]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.177.2456",
+              "templateHash": "8184205564206976690"
+            }
+          },
+          "parameters": {
+            "serverName": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "sqlAdminPassword": {
+              "type": "securestring"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Sql/servers",
+              "apiVersion": "2021-02-01-preview",
+              "name": "[parameters('serverName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "administratorLogin": "sqladmin",
+                "administratorLoginPassword": "[parameters('sqlAdminPassword')]",
+                "version": "12.0",
+                "publicNetworkAccess": "Enabled"
+              }
+            },
+            {
+              "type": "Microsoft.Sql/servers/firewallRules",
+              "apiVersion": "2021-02-01-preview",
+              "name": "[format('{0}/{1}', parameters('serverName'), 'AllowAllWindowsAzureIps')]",
+              "properties": {
+                "startIpAddress": "0.0.0.0",
+                "endIpAddress": "0.0.0.0"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', parameters('serverName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "serverId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Sql/servers', parameters('serverName'))]"
+            },
+            "serverName": {
+              "type": "string",
+              "value": "[parameters('serverName')]"
+            },
+            "serverFqdn": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Sql/servers', parameters('serverName')), '2021-02-01-preview').fullyQualifiedDomainName]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "rg"
+      ]
+    },
+    "sqlAdminPasswordSecret": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "sqlAdminPasswordSecretDeployment",
+      "resourceGroup": "[variables('sharedRgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "keyVaultName": {
+            "value": "[format('{0}-shared-kv', parameters('envName'))]"
+          },
+          "secretName": {
+            "value": "[variables('sqlAdminPasswordSecretName')]"
+          },
+          "secretValue": {
+            "value": "[format('P@ssw0rd123!{0}', uniqueString(parameters('envName'), variables('appName'), subscription().subscriptionId))]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.177.2456",
+              "templateHash": "710732562332569698"
+            }
+          },
+          "parameters": {
+            "keyVaultName": {
+              "type": "string"
+            },
+            "secretName": {
+              "type": "string"
+            },
+            "secretValue": {
+              "type": "securestring"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2021-04-01-preview",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), parameters('secretName'))]",
+              "properties": {
+                "value": "[parameters('secretValue')]"
+              }
+            }
+          ],
+          "outputs": {
+            "secretUri": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.KeyVault/vaults/secrets', parameters('keyVaultName'), parameters('secretName')), '2021-04-01-preview').secretUri]"
+            },
+            "secretName": {
+              "type": "string",
+              "value": "[parameters('secretName')]"
+            }
+          }
+        }
+      }
+    },
+    "appResources": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "appResourcesDeployment",
+      "resourceGroup": "[variables('rgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "siteName": {
+            "value": "[variables('siteName')]"
+          },
+          "storageName": {
+            "value": "[variables('storageName')]"
+          },
+          "appInsightsName": {
+            "value": "[variables('appInsightsName')]"
+          },
+          "storageSecretName": {
+            "value": "[variables('storageSecretName')]"
+          },
+          "planId": {
+            "value": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('sharedRgName')), 'Microsoft.Web/serverfarms', format('{0}-shared-plan', parameters('envName')))]"
+          },
+          "logAnalyticsId": {
+            "value": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('sharedRgName')), 'Microsoft.OperationalInsights/workspaces', format('{0}-shared-logs', parameters('envName')))]"
+          },
+          "sharedKeyVaultName": {
+            "value": "[format('{0}-shared-kv', parameters('envName'))]"
+          },
+          "sharedResourceGroupName": {
+            "value": "[variables('sharedRgName')]"
+          },
+          "location": {
+            "value": "[variables('loc')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.177.2456",
+              "templateHash": "15495686946020769854"
+            }
+          },
+          "parameters": {
+            "siteName": {
+              "type": "string"
+            },
+            "storageName": {
+              "type": "string"
+            },
+            "appInsightsName": {
+              "type": "string"
+            },
+            "storageSecretName": {
+              "type": "string"
+            },
+            "planId": {
+              "type": "string"
+            },
+            "logAnalyticsId": {
+              "type": "string"
+            },
+            "sharedKeyVaultName": {
+              "type": "string"
+            },
+            "sharedResourceGroupName": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2020-12-01",
+              "name": "[parameters('siteName')]",
+              "location": "[parameters('location')]",
+              "kind": "app",
+              "tags": {
+                "displayName": "[parameters('siteName')]"
+              },
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "serverFarmId": "[parameters('planId')]",
+                "siteConfig": {
+                  "use32BitWorkerProcess": false,
+                  "appSettings": [
+                    {
+                      "name": "WEBSITE_RUN_FROM_PACKAGE",
+                      "value": "1"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Insights/components",
+              "apiVersion": "2020-02-02",
+              "name": "[parameters('appInsightsName')]",
+              "location": "[parameters('location')]",
+              "kind": "web",
+              "properties": {
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[parameters('logAnalyticsId')]"
+              }
+            },
+            {
+              "type": "Microsoft.Web/sites/config",
+              "apiVersion": "2015-08-01",
+              "name": "[format('{0}/{1}', parameters('siteName'), 'appsettings')]",
+              "location": "[parameters('location')]",
+              "tags": {
+                "displayName": "config"
+              },
+              "properties": {
+                "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(resourceId('Microsoft.Insights/components', parameters('appInsightsName')), '2020-02-02').InstrumentationKey]",
+                "APPLICATIONINSIGHTS_CONNECTION_STRING": "[reference(resourceId('Microsoft.Insights/components', parameters('appInsightsName')), '2020-02-02').ConnectionString]",
+                "ApplicationInsightsAgent_EXTENSION_VERSION": "~3",
+                "XDT_MicrosoftApplicationInsights_Mode": "Recommended",
+                "XDT_MicrosoftApplicationInsights_PreemptSdk": "Disabled",
+                "ANCM_ADDITIONAL_ERROR_PAGE_LINK": "[format('https://{0}.scm.azurewebsites.net/detectors', parameters('siteName'))]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Insights/components', parameters('appInsightsName'))]",
+                "[resourceId('Microsoft.Web/sites', parameters('siteName'))]",
+                "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('sharedResourceGroupName')), 'Microsoft.Resources/deployments', 'storageSecretDeployment')]"
+              ]
+            },
+            {
+              "type": "Microsoft.Web/sites/config",
+              "apiVersion": "2015-08-01",
+              "name": "[format('{0}/{1}', parameters('siteName'), 'connectionstrings')]",
+              "location": "[parameters('location')]",
+              "tags": {
+                "displayName": "connectionstrings"
+              },
+              "properties": {
+                "myStorage": {
+                  "value": "[format('@Microsoft.KeyVault(VaultName={0};SecretName={1})', parameters('sharedKeyVaultName'), parameters('storageSecretName'))]",
+                  "type": "Custom"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('siteName'))]",
+                "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('sharedResourceGroupName')), 'Microsoft.Resources/deployments', 'storageSecretDeployment')]"
+              ]
+            },
+            {
+              "type": "Microsoft.Storage/storageAccounts",
+              "apiVersion": "2021-04-01",
+              "name": "[parameters('storageName')]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "Standard_LRS"
+              },
+              "kind": "StorageV2",
+              "properties": {
+                "supportsHttpsTrafficOnly": true,
+                "allowBlobPublicAccess": true
+              }
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "keyVaultAccessDeployment",
+              "resourceGroup": "[parameters('sharedResourceGroupName')]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "keyVaultName": {
+                    "value": "[parameters('sharedKeyVaultName')]"
+                  },
+                  "tenantId": {
+                    "value": "[subscription().tenantId]"
+                  },
+                  "objectId": {
+                    "value": "[reference(resourceId('Microsoft.Web/sites', parameters('siteName')), '2020-12-01', 'full').identity.principalId]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.36.177.2456",
+                      "templateHash": "5109073813208648192"
+                    }
+                  },
+                  "parameters": {
+                    "keyVaultName": {
+                      "type": "string"
+                    },
+                    "tenantId": {
+                      "type": "string"
+                    },
+                    "objectId": {
+                      "type": "string"
+                    },
+                    "permissions": {
+                      "type": "object",
+                      "defaultValue": {
+                        "keys": [],
+                        "secrets": [
+                          "get",
+                          "list"
+                        ],
+                        "certificates": []
+                      }
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.KeyVault/vaults/accessPolicies",
+                      "apiVersion": "2021-04-01-preview",
+                      "name": "[format('{0}/{1}', parameters('keyVaultName'), 'add')]",
+                      "properties": {
+                        "accessPolicies": [
+                          {
+                            "tenantId": "[parameters('tenantId')]",
+                            "objectId": "[parameters('objectId')]",
+                            "permissions": "[parameters('permissions')]"
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "keyVaultName": {
+                      "type": "string",
+                      "value": "[parameters('keyVaultName')]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('siteName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "storageSecretDeployment",
+              "resourceGroup": "[parameters('sharedResourceGroupName')]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "keyVaultName": {
+                    "value": "[parameters('sharedKeyVaultName')]"
+                  },
+                  "secretName": {
+                    "value": "[parameters('storageSecretName')]"
+                  },
+                  "secretValue": {
+                    "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix=core.windows.net', parameters('storageName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageName')), '2021-04-01').keys[0].value)]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.36.177.2456",
+                      "templateHash": "710732562332569698"
+                    }
+                  },
+                  "parameters": {
+                    "keyVaultName": {
+                      "type": "string"
+                    },
+                    "secretName": {
+                      "type": "string"
+                    },
+                    "secretValue": {
+                      "type": "securestring"
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.KeyVault/vaults/secrets",
+                      "apiVersion": "2021-04-01-preview",
+                      "name": "[format('{0}/{1}', parameters('keyVaultName'), parameters('secretName'))]",
+                      "properties": {
+                        "value": "[parameters('secretValue')]"
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "secretUri": {
+                      "type": "string",
+                      "value": "[reference(resourceId('Microsoft.KeyVault/vaults/secrets', parameters('keyVaultName'), parameters('secretName')), '2021-04-01-preview').secretUri]"
+                    },
+                    "secretName": {
+                      "type": "string",
+                      "value": "[parameters('secretName')]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('sharedResourceGroupName')), 'Microsoft.Resources/deployments', 'keyVaultAccessDeployment')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "siteName": {
+              "type": "string",
+              "value": "[parameters('siteName')]"
+            },
+            "storageName": {
+              "type": "string",
+              "value": "[parameters('storageName')]"
+            },
+            "storageConnection": {
+              "type": "string",
+              "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('sharedResourceGroupName')), 'Microsoft.Resources/deployments', 'storageSecretDeployment'), '2022-09-01').outputs.secretUri.value]"
+            },
+            "siteUrl": {
+              "type": "string",
+              "value": "[format('https://{0}.azurewebsites.net', parameters('siteName'))]"
+            },
+            "appInsightsName": {
+              "type": "string",
+              "value": "[parameters('appInsightsName')]"
+            },
+            "appInsightsInstrumentationKey": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Insights/components', parameters('appInsightsName')), '2020-02-02').InstrumentationKey]"
+            },
+            "appInsightsConnectionString": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Insights/components', parameters('appInsightsName')), '2020-02-02').ConnectionString]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "rg"
+      ]
+    },
+    "sqlDatabase": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "sqlDatabaseDeployment",
+      "resourceGroup": "[variables('rgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "databaseName": {
+            "value": "[variables('sqlDatabaseName')]"
+          },
+          "sqlServerName": {
+            "value": "[reference('sqlServer').outputs.serverName.value]"
+          },
+          "location": {
+            "value": "[variables('loc')]"
+          },
+          "skuName": {
+            "value": "S0"
+          },
+          "skuTier": {
+            "value": "Standard"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.177.2456",
+              "templateHash": "4650782943519735340"
+            }
+          },
+          "parameters": {
+            "databaseName": {
+              "type": "string"
+            },
+            "sqlServerName": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]"
+            },
+            "skuName": {
+              "type": "string",
+              "defaultValue": "S0"
+            },
+            "skuTier": {
+              "type": "string",
+              "defaultValue": "Standard"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Sql/servers/databases",
+              "apiVersion": "2021-02-01-preview",
+              "name": "[format('{0}/{1}', parameters('sqlServerName'), parameters('databaseName'))]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "[parameters('skuName')]",
+                "tier": "[parameters('skuTier')]"
+              },
+              "properties": {
+                "collation": "SQL_Latin1_General_CP1_CI_AS",
+                "catalogCollation": "SQL_Latin1_General_CP1_CI_AS"
+              }
+            }
+          ],
+          "outputs": {
+            "databaseId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Sql/servers/databases', parameters('sqlServerName'), parameters('databaseName'))]"
+            },
+            "databaseName": {
+              "type": "string",
+              "value": "[parameters('databaseName')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "rg",
+        "sqlServer"
+      ]
+    },
+    "sqlConnectionSecret": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "sqlConnectionSecretDeployment",
+      "resourceGroup": "[variables('sharedRgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "keyVaultName": {
+            "value": "[format('{0}-shared-kv', parameters('envName'))]"
+          },
+          "secretName": {
+            "value": "[variables('sqlConnectionSecretName')]"
+          },
+          "secretValue": {
+            "value": "[format('Server={0};Database={1};User Id=sqladmin;Password=@Microsoft.KeyVault(VaultName={2};SecretName={3});Encrypt=True;Connection Timeout=30;', reference('sqlServer').outputs.serverFqdn.value, reference('sqlDatabase').outputs.databaseName.value, format('{0}-shared-kv', parameters('envName')), variables('sqlAdminPasswordSecretName'))]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.177.2456",
+              "templateHash": "710732562332569698"
+            }
+          },
+          "parameters": {
+            "keyVaultName": {
+              "type": "string"
+            },
+            "secretName": {
+              "type": "string"
+            },
+            "secretValue": {
+              "type": "securestring"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2021-04-01-preview",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), parameters('secretName'))]",
+              "properties": {
+                "value": "[parameters('secretValue')]"
+              }
+            }
+          ],
+          "outputs": {
+            "secretUri": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.KeyVault/vaults/secrets', parameters('keyVaultName'), parameters('secretName')), '2021-04-01-preview').secretUri]"
+            },
+            "secretName": {
+              "type": "string",
+              "value": "[parameters('secretName')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "sqlDatabase",
+        "sqlServer"
+      ]
+    },
+    "simpleSlot": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "simpleSlotDeployment",
+      "resourceGroup": "[variables('rgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "siteName": {
+            "value": "[reference('appResources').outputs.siteName.value]"
+          },
+          "slotName": {
+            "value": "Simple"
+          },
+          "location": {
+            "value": "[variables('loc')]"
+          },
+          "planId": {
+            "value": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('sharedRgName')), 'Microsoft.Web/serverfarms', format('{0}-shared-plan', parameters('envName')))]"
+          },
+          "slotAppSettings": {
+            "value": [
+              {
+                "name": "EnvName",
+                "value": "Simple"
+              },
+              {
+                "name": "FavoriteColor",
+                "value": "Blue"
+              },
+              {
+                "name": "IdentityProvider",
+                "value": "None"
+              },
+              {
+                "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                "value": "[reference('appResources').outputs.appInsightsInstrumentationKey.value]"
+              },
+              {
+                "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                "value": "[reference('appResources').outputs.appInsightsConnectionString.value]"
+              },
+              {
+                "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
+                "value": "~3"
+              }
+            ]
+          },
+          "slotConnectionStrings": {
+            "value": [
+              {
+                "name": "myStorage",
+                "value": "[reference('appResources').outputs.storageConnection.value]",
+                "type": "Custom"
+              }
+            ]
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.177.2456",
+              "templateHash": "7453616184873534489"
+            }
+          },
+          "parameters": {
+            "siteName": {
+              "type": "string"
+            },
+            "slotName": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]"
+            },
+            "planId": {
+              "type": "string"
+            },
+            "slotAppSettings": {
+              "type": "array",
+              "defaultValue": []
+            },
+            "slotConnectionStrings": {
+              "type": "array",
+              "defaultValue": []
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/sites/slots",
+              "apiVersion": "2020-12-01",
+              "name": "[format('{0}/{1}', parameters('siteName'), parameters('slotName'))]",
+              "location": "[parameters('location')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "serverFarmId": "[parameters('planId')]",
+                "siteConfig": {
+                  "use32BitWorkerProcess": false,
+                  "appSettings": "[union(createArray(createObject('name', 'WEBSITE_RUN_FROM_PACKAGE', 'value', '1')), parameters('slotAppSettings'))]"
+                }
+              }
+            },
+            {
+              "condition": "[greater(length(parameters('slotConnectionStrings')), 0)]",
+              "type": "Microsoft.Web/sites/slots/config",
+              "apiVersion": "2015-08-01",
+              "name": "[format('{0}/{1}/{2}', parameters('siteName'), parameters('slotName'), 'connectionstrings')]",
+              "location": "[parameters('location')]",
+              "properties": "[reduce(parameters('slotConnectionStrings'), createObject(), lambda('cur', 'next', union(lambdaVariables('cur'), createObject(format('{0}', lambdaVariables('next').name), createObject('value', lambdaVariables('next').value, 'type', lambdaVariables('next').type)))))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites/slots', parameters('siteName'), parameters('slotName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "slotName": {
+              "type": "string",
+              "value": "[parameters('slotName')]"
+            },
+            "slotUrl": {
+              "type": "string",
+              "value": "[format('https://{0}-{1}.azurewebsites.net', parameters('siteName'), toLower(parameters('slotName')))]"
+            },
+            "slotPrincipalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Web/sites/slots', parameters('siteName'), parameters('slotName')), '2020-12-01', 'full').identity.principalId]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "appResources",
+        "rg"
+      ]
+    },
+    "easySlot": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "easySlotDeployment",
+      "resourceGroup": "[variables('rgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "siteName": {
+            "value": "[reference('appResources').outputs.siteName.value]"
+          },
+          "slotName": {
+            "value": "Easy"
+          },
+          "location": {
+            "value": "[variables('loc')]"
+          },
+          "planId": {
+            "value": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('sharedRgName')), 'Microsoft.Web/serverfarms', format('{0}-shared-plan', parameters('envName')))]"
+          },
+          "slotAppSettings": {
+            "value": [
+              {
+                "name": "EnvName",
+                "value": "Easy"
+              },
+              {
+                "name": "FavoriteColor",
+                "value": "Green"
+              },
+              {
+                "name": "IdentityProvider",
+                "value": "ASP.NET Core Identity"
+              },
+              {
+                "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                "value": "[reference('appResources').outputs.appInsightsInstrumentationKey.value]"
+              },
+              {
+                "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                "value": "[reference('appResources').outputs.appInsightsConnectionString.value]"
+              },
+              {
+                "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
+                "value": "~3"
+              }
+            ]
+          },
+          "slotConnectionStrings": {
+            "value": [
+              {
+                "name": "myStorage",
+                "value": "[reference('appResources').outputs.storageConnection.value]",
+                "type": "Custom"
+              }
+            ]
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.177.2456",
+              "templateHash": "7453616184873534489"
+            }
+          },
+          "parameters": {
+            "siteName": {
+              "type": "string"
+            },
+            "slotName": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]"
+            },
+            "planId": {
+              "type": "string"
+            },
+            "slotAppSettings": {
+              "type": "array",
+              "defaultValue": []
+            },
+            "slotConnectionStrings": {
+              "type": "array",
+              "defaultValue": []
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/sites/slots",
+              "apiVersion": "2020-12-01",
+              "name": "[format('{0}/{1}', parameters('siteName'), parameters('slotName'))]",
+              "location": "[parameters('location')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "serverFarmId": "[parameters('planId')]",
+                "siteConfig": {
+                  "use32BitWorkerProcess": false,
+                  "appSettings": "[union(createArray(createObject('name', 'WEBSITE_RUN_FROM_PACKAGE', 'value', '1')), parameters('slotAppSettings'))]"
+                }
+              }
+            },
+            {
+              "condition": "[greater(length(parameters('slotConnectionStrings')), 0)]",
+              "type": "Microsoft.Web/sites/slots/config",
+              "apiVersion": "2015-08-01",
+              "name": "[format('{0}/{1}/{2}', parameters('siteName'), parameters('slotName'), 'connectionstrings')]",
+              "location": "[parameters('location')]",
+              "properties": "[reduce(parameters('slotConnectionStrings'), createObject(), lambda('cur', 'next', union(lambdaVariables('cur'), createObject(format('{0}', lambdaVariables('next').name), createObject('value', lambdaVariables('next').value, 'type', lambdaVariables('next').type)))))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites/slots', parameters('siteName'), parameters('slotName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "slotName": {
+              "type": "string",
+              "value": "[parameters('slotName')]"
+            },
+            "slotUrl": {
+              "type": "string",
+              "value": "[format('https://{0}-{1}.azurewebsites.net', parameters('siteName'), toLower(parameters('slotName')))]"
+            },
+            "slotPrincipalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Web/sites/slots', parameters('siteName'), parameters('slotName')), '2020-12-01', 'full').identity.principalId]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "appResources",
+        "rg"
+      ]
+    },
+    "b2cSlot": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "b2cSlotDeployment",
+      "resourceGroup": "[variables('rgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "siteName": {
+            "value": "[reference('appResources').outputs.siteName.value]"
+          },
+          "slotName": {
+            "value": "B2C"
+          },
+          "location": {
+            "value": "[variables('loc')]"
+          },
+          "planId": {
+            "value": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('sharedRgName')), 'Microsoft.Web/serverfarms', format('{0}-shared-plan', parameters('envName')))]"
+          },
+          "slotAppSettings": {
+            "value": [
+              {
+                "name": "EnvName",
+                "value": "B2C"
+              },
+              {
+                "name": "FavoriteColor",
+                "value": "Red"
+              },
+              {
+                "name": "IdentityProvider",
+                "value": "Azure AD B2C"
+              },
+              {
+                "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                "value": "[reference('appResources').outputs.appInsightsInstrumentationKey.value]"
+              },
+              {
+                "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                "value": "[reference('appResources').outputs.appInsightsConnectionString.value]"
+              },
+              {
+                "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
+                "value": "~3"
+              }
+            ]
+          },
+          "slotConnectionStrings": {
+            "value": [
+              {
+                "name": "myStorage",
+                "value": "[reference('appResources').outputs.storageConnection.value]",
+                "type": "Custom"
+              }
+            ]
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.177.2456",
+              "templateHash": "7453616184873534489"
+            }
+          },
+          "parameters": {
+            "siteName": {
+              "type": "string"
+            },
+            "slotName": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]"
+            },
+            "planId": {
+              "type": "string"
+            },
+            "slotAppSettings": {
+              "type": "array",
+              "defaultValue": []
+            },
+            "slotConnectionStrings": {
+              "type": "array",
+              "defaultValue": []
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/sites/slots",
+              "apiVersion": "2020-12-01",
+              "name": "[format('{0}/{1}', parameters('siteName'), parameters('slotName'))]",
+              "location": "[parameters('location')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "serverFarmId": "[parameters('planId')]",
+                "siteConfig": {
+                  "use32BitWorkerProcess": false,
+                  "appSettings": "[union(createArray(createObject('name', 'WEBSITE_RUN_FROM_PACKAGE', 'value', '1')), parameters('slotAppSettings'))]"
+                }
+              }
+            },
+            {
+              "condition": "[greater(length(parameters('slotConnectionStrings')), 0)]",
+              "type": "Microsoft.Web/sites/slots/config",
+              "apiVersion": "2015-08-01",
+              "name": "[format('{0}/{1}/{2}', parameters('siteName'), parameters('slotName'), 'connectionstrings')]",
+              "location": "[parameters('location')]",
+              "properties": "[reduce(parameters('slotConnectionStrings'), createObject(), lambda('cur', 'next', union(lambdaVariables('cur'), createObject(format('{0}', lambdaVariables('next').name), createObject('value', lambdaVariables('next').value, 'type', lambdaVariables('next').type)))))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites/slots', parameters('siteName'), parameters('slotName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "slotName": {
+              "type": "string",
+              "value": "[parameters('slotName')]"
+            },
+            "slotUrl": {
+              "type": "string",
+              "value": "[format('https://{0}-{1}.azurewebsites.net', parameters('siteName'), toLower(parameters('slotName')))]"
+            },
+            "slotPrincipalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Web/sites/slots', parameters('siteName'), parameters('slotName')), '2020-12-01', 'full').identity.principalId]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "appResources",
+        "rg"
+      ]
+    },
+    "keycloakSlot": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "keycloakSlotDeployment",
+      "resourceGroup": "[variables('rgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "siteName": {
+            "value": "[reference('appResources').outputs.siteName.value]"
+          },
+          "slotName": {
+            "value": "Keycloak"
+          },
+          "location": {
+            "value": "[variables('loc')]"
+          },
+          "planId": {
+            "value": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('sharedRgName')), 'Microsoft.Web/serverfarms', format('{0}-shared-plan', parameters('envName')))]"
+          },
+          "slotAppSettings": {
+            "value": [
+              {
+                "name": "EnvName",
+                "value": "Keycloak"
+              },
+              {
+                "name": "FavoriteColor",
+                "value": "Purple"
+              },
+              {
+                "name": "IdentityProvider",
+                "value": "Keycloak"
+              },
+              {
+                "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                "value": "[reference('appResources').outputs.appInsightsInstrumentationKey.value]"
+              },
+              {
+                "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                "value": "[reference('appResources').outputs.appInsightsConnectionString.value]"
+              },
+              {
+                "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
+                "value": "~3"
+              }
+            ]
+          },
+          "slotConnectionStrings": {
+            "value": [
+              {
+                "name": "myStorage",
+                "value": "[reference('appResources').outputs.storageConnection.value]",
+                "type": "Custom"
+              }
+            ]
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.177.2456",
+              "templateHash": "7453616184873534489"
+            }
+          },
+          "parameters": {
+            "siteName": {
+              "type": "string"
+            },
+            "slotName": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]"
+            },
+            "planId": {
+              "type": "string"
+            },
+            "slotAppSettings": {
+              "type": "array",
+              "defaultValue": []
+            },
+            "slotConnectionStrings": {
+              "type": "array",
+              "defaultValue": []
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/sites/slots",
+              "apiVersion": "2020-12-01",
+              "name": "[format('{0}/{1}', parameters('siteName'), parameters('slotName'))]",
+              "location": "[parameters('location')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "serverFarmId": "[parameters('planId')]",
+                "siteConfig": {
+                  "use32BitWorkerProcess": false,
+                  "appSettings": "[union(createArray(createObject('name', 'WEBSITE_RUN_FROM_PACKAGE', 'value', '1')), parameters('slotAppSettings'))]"
+                }
+              }
+            },
+            {
+              "condition": "[greater(length(parameters('slotConnectionStrings')), 0)]",
+              "type": "Microsoft.Web/sites/slots/config",
+              "apiVersion": "2015-08-01",
+              "name": "[format('{0}/{1}/{2}', parameters('siteName'), parameters('slotName'), 'connectionstrings')]",
+              "location": "[parameters('location')]",
+              "properties": "[reduce(parameters('slotConnectionStrings'), createObject(), lambda('cur', 'next', union(lambdaVariables('cur'), createObject(format('{0}', lambdaVariables('next').name), createObject('value', lambdaVariables('next').value, 'type', lambdaVariables('next').type)))))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites/slots', parameters('siteName'), parameters('slotName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "slotName": {
+              "type": "string",
+              "value": "[parameters('slotName')]"
+            },
+            "slotUrl": {
+              "type": "string",
+              "value": "[format('https://{0}-{1}.azurewebsites.net', parameters('siteName'), toLower(parameters('slotName')))]"
+            },
+            "slotPrincipalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Web/sites/slots', parameters('siteName'), parameters('slotName')), '2020-12-01', 'full').identity.principalId]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "appResources",
+        "rg"
+      ]
+    },
+    "sqlSlot": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "sqlSlotDeployment",
+      "resourceGroup": "[variables('rgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "siteName": {
+            "value": "[reference('appResources').outputs.siteName.value]"
+          },
+          "slotName": {
+            "value": "SQL"
+          },
+          "location": {
+            "value": "[variables('loc')]"
+          },
+          "planId": {
+            "value": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('sharedRgName')), 'Microsoft.Web/serverfarms', format('{0}-shared-plan', parameters('envName')))]"
+          },
+          "slotAppSettings": {
+            "value": [
+              {
+                "name": "EnvName",
+                "value": "SQL"
+              },
+              {
+                "name": "FavoriteColor",
+                "value": "Orange"
+              },
+              {
+                "name": "IdentityProvider",
+                "value": "SQL Server Authentication"
+              },
+              {
+                "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                "value": "[reference('appResources').outputs.appInsightsInstrumentationKey.value]"
+              },
+              {
+                "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                "value": "[reference('appResources').outputs.appInsightsConnectionString.value]"
+              },
+              {
+                "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
+                "value": "~3"
+              }
+            ]
+          },
+          "slotConnectionStrings": {
+            "value": [
+              {
+                "name": "myStorage",
+                "value": "[reference('appResources').outputs.storageConnection.value]",
+                "type": "Custom"
+              },
+              {
+                "name": "DefaultConnection",
+                "value": "[format('@Microsoft.KeyVault(VaultName={0};SecretName={1})', format('{0}-shared-kv', parameters('envName')), variables('sqlConnectionSecretName'))]",
+                "type": "SQLAzure"
+              }
+            ]
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.177.2456",
+              "templateHash": "7453616184873534489"
+            }
+          },
+          "parameters": {
+            "siteName": {
+              "type": "string"
+            },
+            "slotName": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]"
+            },
+            "planId": {
+              "type": "string"
+            },
+            "slotAppSettings": {
+              "type": "array",
+              "defaultValue": []
+            },
+            "slotConnectionStrings": {
+              "type": "array",
+              "defaultValue": []
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/sites/slots",
+              "apiVersion": "2020-12-01",
+              "name": "[format('{0}/{1}', parameters('siteName'), parameters('slotName'))]",
+              "location": "[parameters('location')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "serverFarmId": "[parameters('planId')]",
+                "siteConfig": {
+                  "use32BitWorkerProcess": false,
+                  "appSettings": "[union(createArray(createObject('name', 'WEBSITE_RUN_FROM_PACKAGE', 'value', '1')), parameters('slotAppSettings'))]"
+                }
+              }
+            },
+            {
+              "condition": "[greater(length(parameters('slotConnectionStrings')), 0)]",
+              "type": "Microsoft.Web/sites/slots/config",
+              "apiVersion": "2015-08-01",
+              "name": "[format('{0}/{1}/{2}', parameters('siteName'), parameters('slotName'), 'connectionstrings')]",
+              "location": "[parameters('location')]",
+              "properties": "[reduce(parameters('slotConnectionStrings'), createObject(), lambda('cur', 'next', union(lambdaVariables('cur'), createObject(format('{0}', lambdaVariables('next').name), createObject('value', lambdaVariables('next').value, 'type', lambdaVariables('next').type)))))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites/slots', parameters('siteName'), parameters('slotName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "slotName": {
+              "type": "string",
+              "value": "[parameters('slotName')]"
+            },
+            "slotUrl": {
+              "type": "string",
+              "value": "[format('https://{0}-{1}.azurewebsites.net', parameters('siteName'), toLower(parameters('slotName')))]"
+            },
+            "slotPrincipalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Web/sites/slots', parameters('siteName'), parameters('slotName')), '2020-12-01', 'full').identity.principalId]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "appResources",
+        "rg"
+      ]
+    },
+    "simpleSlotKeyVaultAccess": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "simpleSlotKeyVaultAccessDeployment",
+      "resourceGroup": "[variables('sharedRgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "keyVaultName": {
+            "value": "[format('{0}-shared-kv', parameters('envName'))]"
+          },
+          "tenantId": {
+            "value": "[subscription().tenantId]"
+          },
+          "objectId": {
+            "value": "[reference('simpleSlot').outputs.slotPrincipalId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.177.2456",
+              "templateHash": "5109073813208648192"
+            }
+          },
+          "parameters": {
+            "keyVaultName": {
+              "type": "string"
+            },
+            "tenantId": {
+              "type": "string"
+            },
+            "objectId": {
+              "type": "string"
+            },
+            "permissions": {
+              "type": "object",
+              "defaultValue": {
+                "keys": [],
+                "secrets": [
+                  "get",
+                  "list"
+                ],
+                "certificates": []
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults/accessPolicies",
+              "apiVersion": "2021-04-01-preview",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'add')]",
+              "properties": {
+                "accessPolicies": [
+                  {
+                    "tenantId": "[parameters('tenantId')]",
+                    "objectId": "[parameters('objectId')]",
+                    "permissions": "[parameters('permissions')]"
+                  }
+                ]
+              }
+            }
+          ],
+          "outputs": {
+            "keyVaultName": {
+              "type": "string",
+              "value": "[parameters('keyVaultName')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "simpleSlot"
+      ]
+    },
+    "easySlotKeyVaultAccess": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "easySlotKeyVaultAccessDeployment",
+      "resourceGroup": "[variables('sharedRgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "keyVaultName": {
+            "value": "[format('{0}-shared-kv', parameters('envName'))]"
+          },
+          "tenantId": {
+            "value": "[subscription().tenantId]"
+          },
+          "objectId": {
+            "value": "[reference('easySlot').outputs.slotPrincipalId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.177.2456",
+              "templateHash": "5109073813208648192"
+            }
+          },
+          "parameters": {
+            "keyVaultName": {
+              "type": "string"
+            },
+            "tenantId": {
+              "type": "string"
+            },
+            "objectId": {
+              "type": "string"
+            },
+            "permissions": {
+              "type": "object",
+              "defaultValue": {
+                "keys": [],
+                "secrets": [
+                  "get",
+                  "list"
+                ],
+                "certificates": []
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults/accessPolicies",
+              "apiVersion": "2021-04-01-preview",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'add')]",
+              "properties": {
+                "accessPolicies": [
+                  {
+                    "tenantId": "[parameters('tenantId')]",
+                    "objectId": "[parameters('objectId')]",
+                    "permissions": "[parameters('permissions')]"
+                  }
+                ]
+              }
+            }
+          ],
+          "outputs": {
+            "keyVaultName": {
+              "type": "string",
+              "value": "[parameters('keyVaultName')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "easySlot"
+      ]
+    },
+    "b2cSlotKeyVaultAccess": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "b2cSlotKeyVaultAccessDeployment",
+      "resourceGroup": "[variables('sharedRgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "keyVaultName": {
+            "value": "[format('{0}-shared-kv', parameters('envName'))]"
+          },
+          "tenantId": {
+            "value": "[subscription().tenantId]"
+          },
+          "objectId": {
+            "value": "[reference('b2cSlot').outputs.slotPrincipalId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.177.2456",
+              "templateHash": "5109073813208648192"
+            }
+          },
+          "parameters": {
+            "keyVaultName": {
+              "type": "string"
+            },
+            "tenantId": {
+              "type": "string"
+            },
+            "objectId": {
+              "type": "string"
+            },
+            "permissions": {
+              "type": "object",
+              "defaultValue": {
+                "keys": [],
+                "secrets": [
+                  "get",
+                  "list"
+                ],
+                "certificates": []
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults/accessPolicies",
+              "apiVersion": "2021-04-01-preview",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'add')]",
+              "properties": {
+                "accessPolicies": [
+                  {
+                    "tenantId": "[parameters('tenantId')]",
+                    "objectId": "[parameters('objectId')]",
+                    "permissions": "[parameters('permissions')]"
+                  }
+                ]
+              }
+            }
+          ],
+          "outputs": {
+            "keyVaultName": {
+              "type": "string",
+              "value": "[parameters('keyVaultName')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "b2cSlot"
+      ]
+    },
+    "keycloakSlotKeyVaultAccess": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "keycloakSlotKeyVaultAccessDeployment",
+      "resourceGroup": "[variables('sharedRgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "keyVaultName": {
+            "value": "[format('{0}-shared-kv', parameters('envName'))]"
+          },
+          "tenantId": {
+            "value": "[subscription().tenantId]"
+          },
+          "objectId": {
+            "value": "[reference('keycloakSlot').outputs.slotPrincipalId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.177.2456",
+              "templateHash": "5109073813208648192"
+            }
+          },
+          "parameters": {
+            "keyVaultName": {
+              "type": "string"
+            },
+            "tenantId": {
+              "type": "string"
+            },
+            "objectId": {
+              "type": "string"
+            },
+            "permissions": {
+              "type": "object",
+              "defaultValue": {
+                "keys": [],
+                "secrets": [
+                  "get",
+                  "list"
+                ],
+                "certificates": []
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults/accessPolicies",
+              "apiVersion": "2021-04-01-preview",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'add')]",
+              "properties": {
+                "accessPolicies": [
+                  {
+                    "tenantId": "[parameters('tenantId')]",
+                    "objectId": "[parameters('objectId')]",
+                    "permissions": "[parameters('permissions')]"
+                  }
+                ]
+              }
+            }
+          ],
+          "outputs": {
+            "keyVaultName": {
+              "type": "string",
+              "value": "[parameters('keyVaultName')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "keycloakSlot"
+      ]
+    },
+    "sqlSlotKeyVaultAccess": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "sqlSlotKeyVaultAccessDeployment",
+      "resourceGroup": "[variables('sharedRgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "keyVaultName": {
+            "value": "[format('{0}-shared-kv', parameters('envName'))]"
+          },
+          "tenantId": {
+            "value": "[subscription().tenantId]"
+          },
+          "objectId": {
+            "value": "[reference('sqlSlot').outputs.slotPrincipalId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.177.2456",
+              "templateHash": "5109073813208648192"
+            }
+          },
+          "parameters": {
+            "keyVaultName": {
+              "type": "string"
+            },
+            "tenantId": {
+              "type": "string"
+            },
+            "objectId": {
+              "type": "string"
+            },
+            "permissions": {
+              "type": "object",
+              "defaultValue": {
+                "keys": [],
+                "secrets": [
+                  "get",
+                  "list"
+                ],
+                "certificates": []
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults/accessPolicies",
+              "apiVersion": "2021-04-01-preview",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'add')]",
+              "properties": {
+                "accessPolicies": [
+                  {
+                    "tenantId": "[parameters('tenantId')]",
+                    "objectId": "[parameters('objectId')]",
+                    "permissions": "[parameters('permissions')]"
+                  }
+                ]
+              }
+            }
+          ],
+          "outputs": {
+            "keyVaultName": {
+              "type": "string",
+              "value": "[parameters('keyVaultName')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "sqlSlot"
+      ]
+    }
+  },
+  "outputs": {
+    "sharedRgName": {
+      "type": "string",
+      "value": "[variables('sharedRgName')]"
+    },
+    "rgName": {
+      "type": "string",
+      "value": "[variables('rgName')]"
+    },
+    "siteName": {
+      "type": "string",
+      "value": "[reference('appResources').outputs.siteName.value]"
+    },
+    "planName": {
+      "type": "string",
+      "value": "[format('{0}-shared-plan', parameters('envName'))]"
+    },
+    "storageName": {
+      "type": "string",
+      "value": "[reference('appResources').outputs.storageName.value]"
+    },
+    "sharedKeyVaultName": {
+      "type": "string",
+      "value": "[format('{0}-shared-kv', parameters('envName'))]"
+    },
+    "appInsightsName": {
+      "type": "string",
+      "value": "[reference('appResources').outputs.appInsightsName.value]"
+    },
+    "siteUrl": {
+      "type": "string",
+      "value": "[reference('appResources').outputs.siteUrl.value]"
+    }
+  }
+}

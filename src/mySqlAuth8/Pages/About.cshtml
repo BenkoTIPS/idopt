@@ -1,0 +1,346 @@
+@page
+@model mySqlAuth8.Pages.AboutModel
+@{
+    ViewData["Title"] = "About";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <h1>@ViewData["Title"]</h1>
+        <p>This page provides information about the application's authentication configuration and current user context.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4 profile-card">
+            <div class="card-header">
+                <h5><i class="fas fa-cogs"></i> Application Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>Application Name:</strong></td>
+                        <td>@Model.ApplicationName</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Version:</strong></td>
+                        <td>@Model.ApplicationVersion</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Environment:</strong></td>
+                        <td><span class="badge bg-info">@Model.Environment</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Database Provider:</strong></td>
+                        <td>@Model.DatabaseProvider</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-4 profile-card">
+            <div class="card-header">
+                <h5><i class="fas fa-shield-alt"></i> Authentication Configuration</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>Default Scheme:</strong></td>
+                        <td>@Model.DefaultAuthenticationScheme</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Challenge Scheme:</strong></td>
+                        <td>@Model.DefaultChallengeScheme</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Sessions:</strong></td>
+                        <td><span class="badge @(Model.SessionsConfigured ? "bg-success" : "bg-warning")">@(Model.SessionsConfigured ? "Configured" : "Not Configured")</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Identity:</strong></td>
+                        <td><span class="badge @(Model.IdentityConfigured ? "bg-success" : "bg-secondary")">@(Model.IdentityConfigured ? "Configured" : "Not Configured")</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4 profile-card">
+            <div class="card-header">
+                <h5><i class="fas fa-list"></i> Configured Authentication Schemes</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.ConfiguredAuthenticationSchemes.Any())
+                {
+                    <div class="row">
+                        @foreach (var scheme in Model.ConfiguredAuthenticationSchemes)
+                        {
+                            <div class="col-md-3 mb-2">
+                                <span class="badge bg-primary">@scheme</span>
+                            </div>
+                        }
+                    </div>
+                    <hr />
+                    <small class="text-muted">
+                        <strong>Features:</strong>
+                        @if (Model.CookiesConfigured) { <span class="badge bg-success me-1">Cookies</span> }
+                        @if (Model.JwtConfigured) { <span class="badge bg-success me-1">JWT/Bearer</span> }
+                        @if (Model.IdentityConfigured) { <span class="badge bg-success me-1">ASP.NET Core Identity</span> }
+                    </small>
+                }
+                else
+                {
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> No authentication schemes detected.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.IdentityConfigured)
+{
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4 profile-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-user-cog"></i> Identity Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Require Confirmed Account:</strong></td>
+                            <td><span class="badge @(Model.RequireConfirmedAccount ? "bg-warning" : "bg-success")">@Model.RequireConfirmedAccount</span></td>
+                        </tr>
+                    </table>
+                    @if (!string.IsNullOrEmpty(Model.IdentityOptionsInfo))
+                    {
+                        <hr />
+                        <h6>Password & Lockout Policy</h6>
+                        <p class="small text-muted">@Model.IdentityOptionsInfo</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <div class="row">
+        <div class="col-md-12">
+            <h3 class="mt-4 mb-3">Current User Information</h3>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4 profile-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-user"></i> User Identity</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Username:</strong></td>
+                            <td>@(User.Identity.Name ?? "N/A")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Authentication Type:</strong></td>
+                            <td>@(User.Identity.AuthenticationType ?? "N/A")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Is Authenticated:</strong></td>
+                            <td><span class="badge bg-success">@User.Identity.IsAuthenticated</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>User ID:</strong></td>
+                            <td>@(Model.UserId ?? "N/A")</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4 profile-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Session Context</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Provider:</strong></td>
+                            <td>@Model.AuthenticationProvider</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Session ID:</strong></td>
+                            <td><code>@(Model.SessionId ?? "N/A")</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Login Time:</strong></td>
+                            <td>@(Model.LoginTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>IP Address:</strong></td>
+                            <td>@Model.IpAddress</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4 profile-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-list"></i> User Claims</h5>
+                    <small class="text-muted">Claims provide additional information about the authenticated user</small>
+                </div>
+                <div class="card-body">
+                    @if (Model.UserClaims.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover claims-table">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Claim Type</th>
+                                        <th>Value</th>
+                                        <th>Issuer</th>
+                                        <th>Value Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var claim in Model.UserClaims)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <code>@claim.Type</code>
+                                                @if (Model.IsWellKnownClaim(claim.Type))
+                                                {
+                                                    <span class="badge bg-info ms-1">Standard</span>
+                                                }
+                                            </td>
+                                            <td class="clickable-cell">
+                                                @if (claim.Value.Length > 100)
+                                                {
+                                                    <span title="@claim.Value">@(claim.Value.Substring(0, 100))...</span>
+                                                }
+                                                else
+                                                {
+                                                    @claim.Value
+                                                }
+                                            </td>
+                                            <td><small class="text-muted">@claim.Issuer</small></td>
+                                            <td><small class="text-muted">@claim.ValueType</small></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No claims found for the current user.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <h6><i class="fas fa-lightbulb"></i> Identity Provider Detection</h6>
+                <p><strong>Detected Provider Type:</strong> @Model.DetectedProviderType</p>
+                <p><strong>Detection Logic:</strong> @Model.DetectionReason</p>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.EasyAuthHeaders.Any())
+    {
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card mb-4 profile-card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-cloud"></i> EasyAuth Headers</h5>
+                        <small class="text-muted">Azure App Service Authentication headers (when using EasyAuth)</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Header Name</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var header in Model.EasyAuthHeaders)
+                                    {
+                                        <tr>
+                                            <td><code>@header.Key</code></td>
+                                            <td>
+                                                @if (header.Value.Length > 200)
+                                                {
+                                                    <span title="@header.Value">@(header.Value.Substring(0, 200))...</span>
+                                                }
+                                                else
+                                                {
+                                                    @header.Value
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-warning">
+                <h4><i class="fas fa-exclamation-triangle"></i> Not Authenticated</h4>
+                <p>You must be logged in to view detailed user information.</p>
+                <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-primary">Log In</a>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // Add any client-side functionality for the about page
+        $(document).ready(function() {
+            // Enable tooltips
+            $('[title]').tooltip();
+            
+            // Add copy functionality for long values
+            $('.table td').click(function() {
+                var text = $(this).text();
+                if (text.length > 50) {
+                    navigator.clipboard.writeText(text).then(function() {
+                        // Could show a toast notification here
+                    });
+                }
+            });
+        });
+    </script>
+}

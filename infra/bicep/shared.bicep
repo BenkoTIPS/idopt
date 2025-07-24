@@ -15,7 +15,7 @@ resource sharedRg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 }
 
 // Deploy App Service Plan
-module appServicePlan 'appServicePlan.bicep' = {
+module appServicePlan 'modules/appServicePlan.bicep' = {
   name: 'appServicePlanDeployment'
   scope: sharedRg
   params: {
@@ -27,7 +27,7 @@ module appServicePlan 'appServicePlan.bicep' = {
 }
 
 // Deploy Log Analytics Workspace
-module logAnalytics 'logAnalytics.bicep' = {
+module logAnalytics 'modules/logAnalytics.bicep' = {
   name: 'logAnalyticsDeployment'
   scope: sharedRg
   params: {
@@ -37,7 +37,7 @@ module logAnalytics 'logAnalytics.bicep' = {
 }
 
 // Deploy shared Key Vault
-module sharedKeyVault 'keyVault.bicep' = {
+module sharedKeyVault 'modules/keyVault.bicep' = {
   name: 'sharedKeyVaultDeployment'
   scope: sharedRg
   params: {
@@ -46,7 +46,6 @@ module sharedKeyVault 'keyVault.bicep' = {
     tenantId: subscription().tenantId
   }
 }
-
 
 // Outputs for use by main deployment
 output sharedRgName string = sharedRg.name

@@ -7,14 +7,7 @@
 }
 
 <div class="text-center">
-    @if (User.Identity.IsAuthenticated)
-    {
-        <h1 class="display-4">Welcome <b>@User.Identity.Name</b></h1>
-    }
-    else
-    {
-        <h1 class="display-4"><a href="myLogin">Login</a> to see more</h1>
-    }
+    <h1 class="display-4">Identity options - <b>@Config["EnvName"]</b></h1>
 
     <p>Learn about <a href="https://github.com/benkotips/identity-options">Identity options</a>.</p>
 </div>
