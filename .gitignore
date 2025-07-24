@@ -4,3 +4,4 @@ obj
 *.user
 *.suo
 .temp
+appsettings.Development.json

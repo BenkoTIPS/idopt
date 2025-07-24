@@ -1,0 +1,152 @@
+@page
+@model myApp.KeyCloak.Pages.AboutModel
+@{
+    ViewData["Title"] = "About";
+}
+
+<div class="container mt-4">
+    <h1 class="display-4">About Identity Configuration</h1>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>Identity Strategy: KeyCloak Self-Hosted Identity Provider</h3>
+                </div>
+                <div class="card-body">
+                    <h5>Authentication Method</h5>
+                    <p class="text-muted">OpenID Connect (OIDC) with self-hosted KeyCloak server</p>
+                    
+                    <h5>Authentication Provider</h5>
+                    <p class="text-muted">@Model.AuthenticationProvider</p>
+                    
+                    <h5>KeyCloak Authority</h5>
+                    <p class="text-muted">@Model.Authority</p>
+                    
+                    <h5>Client Configuration</h5>
+                    <p class="text-muted">
+                        <strong>Client ID:</strong> @Model.MaskedClientId<br>
+                        <strong>Realm:</strong> @Model.Realm
+                    </p>
+                    
+                    <h5>Hosting Mode</h5>
+                    <p class="text-muted">@Model.HostingMode</p>
+                    
+                    <h5>Key Features</h5>
+                    <ul>
+                        <li>Self-hosted identity provider (no cloud dependency)</li>
+                        <li>OpenID Connect / OAuth 2.0 standard protocols</li>
+                        <li>Containerized KeyCloak server</li>
+                        <li>Custom realms and client configurations</li>
+                        <li>User federation and identity brokering</li>
+                        <li>Social login integration capabilities</li>
+                        <li>Fine-grained authorization policies</li>
+                    </ul>
+                    
+                    <h5>OIDC Configuration</h5>
+                    <div class="alert alert-info">
+                        <strong>Callback Path:</strong> @Model.CallbackPath<br>
+                        <strong>Signed Out Callback Path:</strong> @Model.SignedOutCallbackPath<br>
+                        <strong>Response Type:</strong> @Model.ResponseType
+                    </div>
+                </div>
+            </div>
+            
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Current User Information</h3>
+                    </div>
+                    <div class="card-body">
+                        <h5>Identity Details</h5>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Username:</strong></td>
+                                <td>@User.Identity.Name</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Authentication Type:</strong></td>
+                                <td>@User.Identity.AuthenticationType</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Is Authenticated:</strong></td>
+                                <td>@User.Identity.IsAuthenticated</td>
+                            </tr>
+                        </table>
+                        
+                        @if (User.Claims.Any())
+                        {
+                            <h5 class="mt-3">OIDC Token Claims</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var claim in User.Claims)
+                                        {
+                                            <tr>
+                                                <td><code>@claim.Type</code></td>
+                                                <td>@claim.Value</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Authentication Required</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>You are not currently authenticated. To see user information and OIDC claims from KeyCloak:</p>
+                        <a href="/Account/Login" class="btn btn-primary">Sign In with KeyCloak</a>
+                        <div class="alert alert-info mt-3">
+                            <strong>Note:</strong> KeyCloak authentication requires a running KeyCloak server. In Aspire mode, KeyCloak runs as a containerized service.
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.KeyCloakAdminUrl))
+                        {
+                            <div class="alert alert-secondary mt-2">
+                                <strong>KeyCloak Admin:</strong> <a href="@Model.KeyCloakAdminUrl" target="_blank">@Model.KeyCloakAdminUrl</a><br>
+                                <small>Use this to manage users, realms, and client configurations.</small>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Demo Context</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">
+                        This is part of the BenkoTIPS Identity Options demo showcasing different authentication strategies using .NET Aspire.
+                    </p>
+                    <p class="small text-muted">
+                        <strong>KeyCloak</strong> demonstrates self-hosted identity provider using industry-standard OIDC/OAuth 2.0 protocols. This provides full control over the identity infrastructure without cloud dependencies.
+                    </p>
+                    <hr>
+                    <h6>Other Demo Apps</h6>
+                    <ul class="small">
+                        <li>Simple - Manual cookie authentication</li>
+                        <li>SqlIdentity - ASP.NET Identity with EF Core</li>
+                        <li>EasyAuth - Azure App Service built-in auth</li>
+                        <li>B2C - Azure AD B2C federated identity</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

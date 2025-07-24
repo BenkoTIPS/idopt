@@ -1,0 +1,37 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Aspire Host (HTTPS)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-aspire-host",
+            "program": "${workspaceFolder}/src/IdOpt.AppHost/bin/Debug/net8.0/IdOpt.AppHost.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/IdOpt.AppHost",
+            "stopAtEntry": false,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "DOTNET_ENVIRONMENT": "Development",
+                "DOTNET_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:21279",
+                "DOTNET_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22226",
+                "ASPNETCORE_URLS": "https://localhost:17274"
+            },
+            "sourceFileMap": {
+                "/Views": "${workspaceFolder}/Views"
+            },
+            "launchBrowser": {
+                "enabled": true,
+                "args": "${auto-detect-url}",
+                "windows": {
+                    "command": "cmd.exe",
+                    "args": "/C start ${auto-detect-url}"
+                }
+            }
+        }
+    ]
+}

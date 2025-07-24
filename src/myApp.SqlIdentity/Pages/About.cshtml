@@ -1,0 +1,128 @@
+@page
+@model myApp.SqlIdentity.Pages.AboutModel
+@{
+    ViewData["Title"] = "About";
+}
+
+<div class="container mt-4">
+    <h1 class="display-4">About Identity Configuration</h1>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>Identity Strategy: SQL Identity</h3>
+                </div>
+                <div class="card-body">
+                    <h5>Authentication Method</h5>
+                    <p class="text-muted">ASP.NET Core Identity with Entity Framework Core</p>
+                    
+                    <h5>Database Provider</h5>
+                    <p class="text-muted">@Model.DatabaseProvider</p>
+                    
+                    <h5>Hosting Mode</h5>
+                    <p class="text-muted">@Model.HostingMode</p>
+                    
+                    <h5>Connection String</h5>
+                    <p class="text-muted small">@Model.MaskedConnectionString</p>
+                    
+                    <h5>Key Features</h5>
+                    <ul>
+                        <li>Local user registration and login</li>
+                        <li>Password-based authentication</li>
+                        <li>User roles and claims support</li>
+                        <li>Email confirmation workflow</li>
+                        <li>Dual-mode operation (SQLite standalone / SQL Server in Aspire)</li>
+                    </ul>
+                </div>
+            </div>
+            
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Current User Information</h3>
+                    </div>
+                    <div class="card-body">
+                        <h5>Identity Details</h5>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Username:</strong></td>
+                                <td>@User.Identity.Name</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Authentication Type:</strong></td>
+                                <td>@User.Identity.AuthenticationType</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Is Authenticated:</strong></td>
+                                <td>@User.Identity.IsAuthenticated</td>
+                            </tr>
+                        </table>
+                        
+                        @if (User.Claims.Any())
+                        {
+                            <h5 class="mt-3">Claims</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var claim in User.Claims)
+                                        {
+                                            <tr>
+                                                <td><code>@claim.Type</code></td>
+                                                <td>@claim.Value</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Authentication Required</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>You are not currently authenticated. To see user information and claims:</p>
+                        <a href="/Identity/Account/Login" class="btn btn-primary">Sign In</a>
+                        <a href="/Identity/Account/Register" class="btn btn-outline-secondary">Register</a>
+                    </div>
+                </div>
+            }
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Demo Context</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">
+                        This is part of the BenkoTIPS Identity Options demo showcasing different authentication strategies using .NET Aspire.
+                    </p>
+                    <p class="small text-muted">
+                        <strong>SQL Identity</strong> demonstrates traditional ASP.NET Identity with Entity Framework Core, supporting both local SQLite (standalone) and SQL Server (Aspire orchestrated) databases.
+                    </p>
+                    <hr>
+                    <h6>Other Demo Apps</h6>
+                    <ul class="small">
+                        <li>Simple - Manual cookie authentication</li>
+                        <li>EasyAuth - Azure App Service built-in auth</li>
+                        <li>B2C - Azure AD B2C federated identity</li>
+                        <li>KeyCloak - Self-hosted identity provider</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

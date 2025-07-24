@@ -1,0 +1,45 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Code\\github\\bnk25-identity\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{72E2DC39-C554-42AB-F612-524E29EA688B}|src\\idopt.basic\\idopt.basic.csproj|d:\\code\\github\\bnk25-identity\\src\\idopt.basic\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{72E2DC39-C554-42AB-F612-524E29EA688B}|src\\idopt.basic\\idopt.basic.csproj|solutionrelative:src\\idopt.basic\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "D:\\Code\\github\\bnk25-identity\\src\\idopt.basic\\appsettings.json",
+              "RelativeDocumentMoniker": "src\\idopt.basic\\appsettings.json",
+              "ToolTip": "D:\\Code\\github\\bnk25-identity\\src\\idopt.basic\\appsettings.json",
+              "RelativeToolTip": "src\\idopt.basic\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-07-24T14:30:13.238Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

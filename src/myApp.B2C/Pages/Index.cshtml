@@ -1,0 +1,32 @@
+﻿@page
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome <b>@Config["EnvName"]</b></h1>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <div class="alert alert-success">
+            <h4>Hello, @User.Identity.Name!</h4>
+            <p>You are successfully authenticated with Azure AD B2C.</p>
+            <a href="/Account/SignOut" class="btn btn-primary">Sign Out</a>
+        </div>
+        
+        <p>View secure <a href="About">Configuration</a> (requires Authenticated user)</p>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <h4>You are not signed in</h4>
+            <p>Sign in with your Azure AD B2C account to access protected content.</p>
+            <a href="/Account/SignIn" class="btn btn-primary">Sign In</a>
+        </div>
+    }
+
+    <p>Learn about <a href="https://github.com/benkotips/idopt"> Identity Options with .NET</a>.</p>
+</div>

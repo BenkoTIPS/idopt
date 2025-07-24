@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>aspnet-myApp.SqlIdentity-63dda6e0-87cc-4433-a6a7-4cfc80fa3a9a</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Microsoft.EntityFrameworkCore.SqlServer" Version="8.2.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.0-preview.6.25358.103" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0-preview.6.25358.103" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.0-preview.6.25358.103" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0-preview.6.25358.103" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0-preview.6.25358.103" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0-preview.6.25358.103" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\IdOpt.ServiceDefaults\IdOpt.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+</Project>

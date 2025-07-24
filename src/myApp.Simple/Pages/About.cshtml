@@ -1,0 +1,130 @@
+@page
+@model myApp.Simple.Pages.AboutModel
+@{
+    ViewData["Title"] = "About";
+}
+
+<div class="container mt-4">
+    <h1 class="display-4">About Identity Configuration</h1>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>Identity Strategy: Simple Cookie Authentication</h3>
+                </div>
+                <div class="card-body">
+                    <h5>Authentication Method</h5>
+                    <p class="text-muted">Manual cookie-based authentication with hardcoded credentials</p>
+                    
+                    <h5>Authentication Scheme</h5>
+                    <p class="text-muted">@Model.AuthenticationScheme</p>
+                    
+                    <h5>Hosting Mode</h5>
+                    <p class="text-muted">@Model.HostingMode</p>
+                    
+                    <h5>Key Features</h5>
+                    <ul>
+                        <li>Simple login page with hardcoded username/password</li>
+                        <li>Cookie-based session management</li>
+                        <li>Manual claims creation</li>
+                        <li>Custom login/logout flow</li>
+                        <li>No database required</li>
+                    </ul>
+                    
+                    <h5>Demo Credentials</h5>
+                    <div class="alert alert-info">
+                        <strong>Username:</strong> demo<br>
+                        <strong>Password:</strong> password
+                    </div>
+                </div>
+            </div>
+            
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Current User Information</h3>
+                    </div>
+                    <div class="card-body">
+                        <h5>Identity Details</h5>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Username:</strong></td>
+                                <td>@User.Identity.Name</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Authentication Type:</strong></td>
+                                <td>@User.Identity.AuthenticationType</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Is Authenticated:</strong></td>
+                                <td>@User.Identity.IsAuthenticated</td>
+                            </tr>
+                        </table>
+                        
+                        @if (User.Claims.Any())
+                        {
+                            <h5 class="mt-3">Claims</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var claim in User.Claims)
+                                        {
+                                            <tr>
+                                                <td><code>@claim.Type</code></td>
+                                                <td>@claim.Value</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Authentication Required</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>You are not currently authenticated. To see user information and claims:</p>
+                        <a href="/myLogin" class="btn btn-primary">Sign In</a>
+                    </div>
+                </div>
+            }
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Demo Context</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">
+                        This is part of the BenkoTIPS Identity Options demo showcasing different authentication strategies using .NET Aspire.
+                    </p>
+                    <p class="small text-muted">
+                        <strong>Simple Authentication</strong> demonstrates the most basic form of authentication using cookies and hardcoded credentials. This approach is useful for understanding authentication fundamentals but not recommended for production.
+                    </p>
+                    <hr>
+                    <h6>Other Demo Apps</h6>
+                    <ul class="small">
+                        <li>SqlIdentity - ASP.NET Identity with EF Core</li>
+                        <li>EasyAuth - Azure App Service built-in auth</li>
+                        <li>B2C - Azure AD B2C federated identity</li>
+                        <li>KeyCloak - Self-hosted identity provider</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

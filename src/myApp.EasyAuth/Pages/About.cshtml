@@ -1,0 +1,156 @@
+@page
+@model myApp.EasyAuth.Pages.AboutModel
+@{
+    ViewData["Title"] = "About";
+}
+
+<div class="container mt-4">
+    <h1 class="display-4">About Identity Configuration</h1>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>Identity Strategy: Azure App Service Easy Authentication</h3>
+                </div>
+                <div class="card-body">
+                    <h5>Authentication Method</h5>
+                    <p class="text-muted">Azure App Service built-in authentication (Ambassador pattern)</p>
+                    
+                    <h5>Authentication Provider</h5>
+                    <p class="text-muted">@Model.AuthenticationProvider</p>
+                    
+                    <h5>Hosting Mode</h5>
+                    <p class="text-muted">@Model.HostingMode</p>
+                    
+                    <h5>Key Features</h5>
+                    <ul>
+                        <li>Zero-code authentication through Azure App Service</li>
+                        <li>HTTP headers contain authentication information</li>
+                        <li>Ambassador pattern - authentication handled outside app</li>
+                        <li>Supports multiple identity providers (Azure AD, Google, Facebook, etc.)</li>
+                        <li>No authentication code required in application</li>
+                    </ul>
+                    
+                    <h5>EasyAuth Headers</h5>
+                    <div class="alert alert-info">
+                        Authentication information is provided via HTTP headers when deployed to Azure App Service with EasyAuth enabled.
+                        In development mode, these headers are simulated for demonstration purposes.
+                    </div>
+                </div>
+            </div>
+            
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Current User Information</h3>
+                    </div>
+                    <div class="card-body">
+                        <h5>Identity Details</h5>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Username:</strong></td>
+                                <td>@User.Identity.Name</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Authentication Type:</strong></td>
+                                <td>@User.Identity.AuthenticationType</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Is Authenticated:</strong></td>
+                                <td>@User.Identity.IsAuthenticated</td>
+                            </tr>
+                        </table>
+                        
+                        @if (Model.EasyAuthHeaders.Any())
+                        {
+                            <h5 class="mt-3">EasyAuth Headers</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Header Name</th>
+                                            <th>Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var header in Model.EasyAuthHeaders)
+                                        {
+                                            <tr>
+                                                <td><code>@header.Key</code></td>
+                                                <td>@header.Value</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        
+                        @if (User.Claims.Any())
+                        {
+                            <h5 class="mt-3">Claims</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var claim in User.Claims)
+                                        {
+                                            <tr>
+                                                <td><code>@claim.Type</code></td>
+                                                <td>@claim.Value</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Authentication Status</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>EasyAuth is not currently active. When deployed to Azure App Service with Easy Authentication enabled, users are automatically authenticated before reaching the application.</p>
+                        <div class="alert alert-warning">
+                            <strong>Development Mode:</strong> In local development, EasyAuth headers are not available. This app would normally be protected by Azure App Service authentication.
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Demo Context</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">
+                        This is part of the BenkoTIPS Identity Options demo showcasing different authentication strategies using .NET Aspire.
+                    </p>
+                    <p class="small text-muted">
+                        <strong>EasyAuth</strong> demonstrates the Ambassador pattern where authentication is handled entirely outside the application by Azure App Service. No authentication code is required in the app itself.
+                    </p>
+                    <hr>
+                    <h6>Other Demo Apps</h6>
+                    <ul class="small">
+                        <li>Simple - Manual cookie authentication</li>
+                        <li>SqlIdentity - ASP.NET Identity with EF Core</li>
+                        <li>B2C - Azure AD B2C federated identity</li>
+                        <li>KeyCloak - Self-hosted identity provider</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -13,10 +13,10 @@ Why are we here?
 ## Demos
 
 - Simple Identity App
-- SQL Auth
 - EasyAuth
+- SQL Auth
+- Keycloak
 - Azure AD B2C
-- others
 
 ## Questions
 

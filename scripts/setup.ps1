@@ -5,34 +5,37 @@ git branch -M main
 git remote add origin https://github.com/BenkoTIPS/idopt.git
 git push -u origin main
 
-dotnet new webapp -o src/myVideos
-dotnet new sln
-dotnet sln add src/myVideos
+# Add branch for Aspire + Identity demos
+git checkout -b aspire-identity
 
-dotnet add src/myVideos package azure.storage.blobs
 
-devenv .\bnk-streamit.sln
-dotnet new page -n Videos -o src/myVideos/Pages
-dotnet new page -n Upload -o src/myVideos/Pages
-dotnet new page -n myLogin -o src/myVideos/Pages
+## Create Aspire Web App with a solution name $appName and run locally
+# Set base app name
+$appName = "IdOpt"
 
-start powerpnt.exe docs/bnk24-streamit.pptx
-start powerpnt.exe docs/bnk25-identity.pptx
+# Install Aspire templates if needed
+dotnet workload install aspire
+## dotnet new install Microsoft.DotNet.Aspire.Templates
 
-## Deploy to Azure - Use az webapp up to deploy to Azure
-az login --use-device-code
+# Create Aspire solution in /src
+mkdir ./src
+cd ./src
+dotnet new aspire -n IdOpt  -f net8.0
 
-# deploy infrastructure - ARM template
-$deploy = az deployment sub create --location centralUs --template-file infra/arm/main.bicep
+# Create all projects
+dotnet new webapp -n myApp.Simple
+dotnet sln add myApp.Simple/myApp.Simple.csproj
 
-# Extract outputs from deployment
-$values = $deploy | ConvertFrom-Json
-$siteName = $values.properties.outputs.siteName.value
-$planName = $values.properties.outputs.planName.value
-$rgName = $values.properties.outputs.rgName.value
-$slotNames = @("sql", "Easy", "B2C", "Keycloak", "Ids")
+dotnet new webapp --auth Individual -n myApp.SqlIdentity
+dotnet sln add myApp.SqlIdentity/myApp.SqlIdentity.csproj
 
-# Change to the project directory for deployment
-cd src/myVideos
-az webapp up -b --name $siteName --resource-group $rgName --plan $planName
-cd ../..
+dotnet new webapp -n myApp.EasyAuth
+dotnet sln add myApp.EasyAuth/myApp.EasyAuth.csproj
+
+dotnet new webapp -n myApp.B2C
+dotnet sln add myApp.B2C/myApp.B2C.csproj
+
+dotnet new web -n myApp.KeyCloak
+dotnet sln add myApp.KeyCloak/myApp.KeyCloak.csproj
+
+# Add to solution

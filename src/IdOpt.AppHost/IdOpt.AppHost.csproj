@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsAspireHost>true</IsAspireHost>
+    <UserSecretsId>cfb3a9ff-2afc-4fe4-89e6-e31f6f58f78e</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="8.2.2" />
+    <PackageReference Include="Aspire.Hosting.SqlServer" Version="8.2.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\myApp.B2C\myApp.B2C.csproj" />
+    <ProjectReference Include="..\myApp.EasyAuth\myApp.EasyAuth.csproj" />
+    <ProjectReference Include="..\myApp.KeyCloak\myApp.KeyCloak.csproj" />
+    <ProjectReference Include="..\myApp.Simple\myApp.Simple.csproj" />
+    <ProjectReference Include="..\myApp.SqlIdentity\myApp.SqlIdentity.csproj" />
+  </ItemGroup>
+
+</Project>
