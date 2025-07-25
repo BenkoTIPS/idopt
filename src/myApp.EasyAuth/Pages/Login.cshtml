@@ -1,0 +1,111 @@
+@page
+@model MyApp.EasyAuth.Pages.LoginModel
+@{
+    ViewData["Title"] = "Sign In";
+    Layout = "_Layout";
+}
+
+<style>
+    .login-container {
+        min-height: calc(100vh - 180px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .login-providers {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .auth-provider-btn {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        background: rgba(255, 255, 255, 0.9);
+    }
+    
+    .auth-provider-btn:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    }
+</style>
+
+<div class="login-container">
+    <div class="text-center">
+        <h2 class="mb-4 text-white">Sign in to myTrackr</h2>
+        
+        <div class="login-providers">
+            <!-- Microsoft/Azure AD -->
+            <a href="?handler=InitiateLogin&provider=aad" class="auth-provider-btn" title="Sign in with Microsoft">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="#0078D4">
+                    <path d="M11.4 3.5H3.5v7.9H11.4V3.5z"/>
+                    <path d="M11.4 12.6H3.5v7.9H11.4v-7.9z"/>
+                    <path d="M20.5 3.5h-7.9v7.9h7.9V3.5z"/>
+                    <path d="M20.5 12.6h-7.9v7.9h7.9v-7.9z"/>
+                </svg>
+            </a>
+            
+            <!-- Google -->
+            <a href="?handler=InitiateLogin&provider=google" class="auth-provider-btn" title="Sign in with Google">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M23.766 12.2764c0-.816-.069-1.6193-.2-2.393H12.1993v4.5285h6.5057c-.2807 1.5095-1.1307 2.7877-2.4097 3.6417v3.0314h3.8937c2.274-2.0943 3.5833-5.177 3.5833-8.8086z"/>
+                    <path fill="#34A853" d="M12.1993 23.9863c3.2443 0 5.9787-1.0613 7.9743-2.8834l-3.8937-3.0314c-1.0807.7254-2.4577 1.1484-4.0806 1.1484-3.144 0-5.799-2.1253-6.7526-4.9533H1.304v3.1304c1.9893 3.9517 6.0687 6.586 10.8954 6.586z"/>
+                    <path fill="#FBBC05" d="M5.4467 14.2283c-.2413-.716-.385-1.4853-.385-2.2733 0-.789.144-1.5587.385-2.2733V6.5513H1.304C.544 8.2913.1347 10.2293.1347 12.2283c0 1.7567.3267 3.429.969 4.9987l4.143-3.3217z"/>
+                    <path fill="#EA4335" d="M12.1993 5.2149c1.7733 0 3.3673.6094 4.6227 1.8044l3.4413-3.439C18.14 1.664 15.4053.3063 12.1993.3063 7.4733.3063 3.394 2.9416 1.404 6.895l4.0427 3.1304c.953-2.8334 3.608-4.8104 6.7526-4.8104z"/>
+                </svg>
+            </a>
+            
+            <!-- Facebook -->
+            <a href="?handler=InitiateLogin&provider=facebook" class="auth-provider-btn" title="Sign in with Facebook">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+                    <path fill="#1877F2" d="M23 12C23 5.9 18.1 1 12 1C5.9 1 1 5.9 1 12C1 17.4 4.9 21.9 10 22.9V15H7.5V12H10V9.8C10 7.1 11.7 5.5 14.2 5.5C15.3 5.5 16.5 5.7 16.5 5.7V8H15.2C13.9 8 13.5 8.8 13.5 9.7V12H16.4L16 15H13.5V22.9C18.6 21.9 23 17.4 23 12Z"/>
+                </svg>
+            </a>
+            
+            <!-- Twitter/X -->
+            <a href="?handler=InitiateLogin&provider=x" class="auth-provider-btn" title="Sign in with Twitter/X">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="black">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+            </a>
+            
+            @if(Model.LocalAuthEnabled)
+            {
+                <!-- Local Development -->
+                <a href="?handler=InitiateLogin&provider=simple" class="auth-provider-btn" style="background: linear-gradient(145deg, #2d2d44, #1e1e2f); border: 1px solid rgba(255,255,255,0.1);" title="Local Development Login">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#64b5f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </a>
+            }
+        </div>
+        
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger mt-4 shadow-sm border-0 mx-auto" style="max-width: 400px;">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill me-3"></i>
+                    <div>@Model.ErrorMessage</div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Clear user-related storage but preserve auth cookies
+        sessionStorage.removeItem('currentUserId');
+        localStorage.removeItem('userPreferences');
+    });
+</script>

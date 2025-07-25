@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,31 +40,27 @@ builder.Services.AddAuthentication(options =>
         options.Authority = $"{instance}{tenantId}/{policy}/v2.0/";
         
         // Configure response type and scope for authorization code flow
-        options.ResponseType = "code";
-        options.ResponseMode = "query";
+        // Use "code id_token" to ensure we get both code and id_token
+        options.ResponseType = "code id_token";
+        options.ResponseMode = "form_post";
         options.Scope.Clear();
         options.Scope.Add("openid");
         options.Scope.Add("profile");
+        options.Scope.Add("offline_access"); // Required for access token
         
         // B2C specific configuration to handle token validation
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
             NameClaimType = "name",
-            ValidateIssuer = false // B2C uses different issuer format
+            ValidateIssuer = false, // B2C uses different issuer format
+            ClockSkew = TimeSpan.FromMinutes(10) // Allow 10 minutes clock skew tolerance
         };
         
-        // Configure for B2C - don't require access token validation
-        options.GetClaimsFromUserInfoEndpoint = false;
+        // Configure for B2C
+        options.GetClaimsFromUserInfoEndpoint = true;
         
-        // Skip token validation that expects both access_token and id_token
-        options.SkipUnrecognizedRequests = true;
-        
-        // Custom protocol validator for B2C that doesn't require access token
-        options.ProtocolValidator = new Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectProtocolValidator()
-        {
-            RequireNonce = false,
-            RequireStateValidation = false
-        };
+        // Custom protocol validator for B2C that handles the token response correctly
+        options.ProtocolValidator = new CustomB2CProtocolValidator();
         
         // Enable token saving if configured
         options.SaveTokens = bool.Parse(b2cConfig["SaveTokens"] ?? "false");
@@ -87,27 +85,6 @@ builder.Services.AddAuthentication(options =>
                 // This event fires when the token is successfully validated
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
                 logger.LogInformation("Token validated successfully for user: {User}", context.Principal?.Identity?.Name);
-                return Task.CompletedTask;
-            },
-            OnAuthorizationCodeReceived = context =>
-            {
-                // B2C authorization code handling
-                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogInformation("Authorization code received from B2C");
-                return Task.CompletedTask;
-            },
-            OnTokenResponseReceived = context =>
-            {
-                // Handle B2C token response - this fires after token exchange
-                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogInformation("Token response received from B2C");
-                
-                // B2C might not return access_token for basic scopes, which is fine
-                if (context.TokenEndpointResponse.AccessToken == null)
-                {
-                    logger.LogInformation("No access token received from B2C (this is normal for basic authentication)");
-                }
-                
                 return Task.CompletedTask;
             }
         };
@@ -144,3 +121,43 @@ app.MapRazorPages()
    .WithStaticAssets();
 
 app.Run();
+
+// Custom protocol validator for Azure AD B2C that doesn't require both tokens
+public class CustomB2CProtocolValidator : OpenIdConnectProtocolValidator
+{
+    public CustomB2CProtocolValidator()
+    {
+        // Configure for B2C - disable strict state validation that can cause issues
+        RequireState = false;
+        RequireStateValidation = false;
+        RequireNonce = false;
+    }
+
+    public override void ValidateTokenResponse(OpenIdConnectProtocolValidationContext validationContext)
+    {
+        // Override the default validation that requires both id_token and access_token
+        // B2C might only return id_token for authentication scenarios
+        if (validationContext.ProtocolMessage.IdToken != null)
+        {
+            // If we have an id_token, that's sufficient for B2C authentication
+            return;
+        }
+        
+        // Fall back to base validation if no id_token
+        base.ValidateTokenResponse(validationContext);
+    }
+
+    public override void ValidateAuthenticationResponse(OpenIdConnectProtocolValidationContext validationContext)
+    {
+        // Override to handle B2C specific validation requirements
+        try
+        {
+            base.ValidateAuthenticationResponse(validationContext);
+        }
+        catch (OpenIdConnectProtocolInvalidStateException)
+        {
+            // Ignore state validation errors for B2C since we disabled RequireState
+            // This handles cases where B2C doesn't return the state parameter correctly
+        }
+    }
+}

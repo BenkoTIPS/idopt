@@ -16,6 +16,6 @@ builder.AddProject<Projects.myApp_EasyAuth>("myapp-easyauth")
     .WithHttpsEndpoint(name: "easyauth-https");
 
 builder.AddProject<Projects.myApp_B2C>("myapp-b2c")
-    .WithHttpsEndpoint(name: "b2c-https");
+    .WithHttpsEndpoint(port: 7025, name: "b2c-https");
 
 builder.Build().Run();

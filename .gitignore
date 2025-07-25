@@ -5,3 +5,16 @@ obj
 *.suo
 .temp
 appsettings.Development.json
+.vs
+src/.vs/IdOpt25/CopilotIndices/17.14.827.52834/CodeChunks.db
+src/.vs/IdOpt25/CopilotIndices/17.14.827.52834/SemanticSymbols.db
+src/.vs/IdOpt25/DesignTimeBuild/.dtbcache.v2
+src/.vs/IdOpt25/FileContentIndex/6efd6e1f-7d3f-4a3a-be94-55e3408ed88c.vsidx
+src/.vs/IdOpt25/FileContentIndex/9c2380c1-808c-47fd-b0da-e9975a8ae849.vsidx
+src/.vs/IdOpt25/FileContentIndex/a1c78b15-56f1-4fd3-aa98-bcaea7b60be4.vsidx
+src/.vs/IdOpt25/v17/.futdcache.v2
+src/.vs/IdOpt25/v17/DocumentLayout.backup.json
+src/.vs/IdOpt25/v17/DocumentLayout.json
+src/.vs/ProjectEvaluation/idopt25.metadata.v9.bin
+src/.vs/ProjectEvaluation/idopt25.projects.v9.bin
+src/.vs/ProjectEvaluation/idopt25.strings.v9.bin

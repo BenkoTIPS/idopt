@@ -1,3 +1,5 @@
+using myApp.Simple.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
@@ -5,12 +7,15 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddRazorPages();
 
+// Register UserProfileService
+builder.Services.AddScoped<IUserProfileService, UserProfileService>();
+
 // Add Authentication
 builder.Services.AddAuthentication("CookieAuth")
     .AddCookie("CookieAuth", options =>
     {
-        options.LoginPath = "/myLogin";
-        options.LogoutPath = "/myLogin";
+        options.LoginPath = "/localLogin";
+        options.LogoutPath = "/index";
     });
 
 var app = builder.Build();

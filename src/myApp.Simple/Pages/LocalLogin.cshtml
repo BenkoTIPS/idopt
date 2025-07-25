@@ -1,0 +1,22 @@
+﻿@page
+@model myApp.Simple.Pages.LocalLoginModel
+@{
+    Layout = "_Layout";
+}
+
+<h2>Local Login</h2>
+
+<form method="post">
+    <div class="mb-3" style="max-width: 300px;">
+        <label asp-for="Username" class="form-label">Username</label>
+        <div class="input-group">
+            <input asp-for="Username" class="form-control" 
+                   maxlength="50" pattern="^([A-Za-z0-9]{1,50}|[a-zA-Z0-9._%+-]+@@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$" />
+            <button type="submit" class="btn btn-primary">Login</button>
+        </div>
+        <small class="form-text text-muted">
+            Username must be 1-50 characters and contain only letters and numbers.
+        </small>
+        <span asp-validation-for="Username" class="text-danger"></span>
+    </div>
+</form>

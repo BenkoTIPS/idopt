@@ -1,0 +1,64 @@
+@using Microsoft.AspNetCore.Authentication
+@using System.Security.Claims
+
+@if (User?.Identity?.IsAuthenticated == true)
+{
+    <ul class="navbar-nav">
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-user-circle"></i>
+                @if (!string.IsNullOrEmpty(User.Identity.Name))
+                {
+                    @User.Identity.Name
+                }
+                else if (User.Claims.Any(c => c.Type == ClaimTypes.Email))
+                {
+                    @User.FindFirst(ClaimTypes.Email)?.Value
+                }
+                else if (User.Claims.Any(c => c.Type == ClaimTypes.NameIdentifier))
+                {
+                    @("User " + User.FindFirst(ClaimTypes.NameIdentifier)?.Value?.Substring(0, Math.Min(8, User.FindFirst(ClaimTypes.NameIdentifier)?.Value?.Length ?? 0)))
+                }
+                else
+                {
+                    @("Authenticated User")
+                }
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <li><h6 class="dropdown-header">Account Info</h6></li>
+                @if (User.Claims.Any(c => c.Type == "idp"))
+                {
+                    <li><span class="dropdown-item-text">
+                        <small class="text-muted">Provider: @User.FindFirst("idp")?.Value</small>
+                    </span></li>
+                }
+                @if (User.Claims.Any(c => c.Type == ClaimTypes.Email))
+                {
+                    <li><span class="dropdown-item-text">
+                        <small class="text-muted">Email: @User.FindFirst(ClaimTypes.Email)?.Value</small>
+                    </span></li>
+                }
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" asp-page="/About">View Claims</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <form method="post" asp-page="/Logout" class="d-inline">
+                        <button type="submit" class="dropdown-item">
+                            <i class="fas fa-sign-out-alt"></i> Sign Out
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </li>
+    </ul>
+}
+else
+{
+    <ul class="navbar-nav">
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-page="/Login">
+                <i class="fas fa-sign-in-alt"></i> Sign In
+            </a>
+        </li>
+    </ul>
+}
