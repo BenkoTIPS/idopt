@@ -40,9 +40,9 @@ builder.Services.AddAuthentication(options =>
         options.Authority = $"{instance}{tenantId}/{policy}/v2.0/";
         
         // Configure response type and scope for authorization code flow
-        // Use "code id_token" to ensure we get both code and id_token
-        options.ResponseType = "code id_token";
-        options.ResponseMode = "form_post";
+        // Use only "code" for pure authorization code flow (no implicit flow)
+        options.ResponseType = OpenIdConnectResponseType.Code;
+        options.ResponseMode = OpenIdConnectResponseMode.Query;
         options.Scope.Clear();
         options.Scope.Add("openid");
         options.Scope.Add("profile");

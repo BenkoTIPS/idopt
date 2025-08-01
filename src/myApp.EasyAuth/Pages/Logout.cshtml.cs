@@ -130,21 +130,62 @@ namespace MyApp.EasyAuth.Pages
             else if (authProvider.Equals("Easy", StringComparison.OrdinalIgnoreCase))
             {
                 logger?.LogInformation("Executing Easy Auth logout for user: {UserId}", userId);
-                // For Easy Auth, we need to redirect to the built-in logout endpoint
-                // This will clear the authentication cookies set by App Service
-                return Redirect("/.auth/logout?post_logout_redirect_uri=/");
+                
+                // Check if we're running locally or in Azure
+                var isLocal = HttpContext.Request.Host.Host.Contains("localhost") || 
+                             HttpContext.Request.Host.Host.StartsWith("127.0.0.1") ||
+                             string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME"));
+                
+                if (isLocal)
+                {
+                    // For local development, clear session and redirect to home
+                    if (HttpContext.Session.IsAvailable)
+                    {
+                        HttpContext.Session.Clear();
+                    }
+                    // Only sign out from Cookie scheme - EasyAuth doesn't support sign-out
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    logger?.LogInformation("Local logout completed for user: {UserId}", userId);
+                    return RedirectToPage("/Index");
+                }
+                else
+                {
+                    // For Azure App Service, use the real EasyAuth logout endpoint
+                    return Redirect("/.auth/logout?post_logout_redirect_uri=/");
+                }
             }
             else
             {
                 logger?.LogInformation("Executing EasyAuth logout for user: {UserId}", userId);
-                // EasyAuth logout - first sign out locally then redirect to EasyAuth endpoint
-                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                 
-                // Add cache-busting parameter and post_logout_redirect_uri to the logout URL
-                var cacheBuster = DateTime.UtcNow.Ticks;
-                var logoutUrl = $"{Request.Scheme}://{Request.Host}/.auth/logout?post_logout_redirect_uri=/&t={cacheBuster}";
+                // Check if we're running locally or in Azure
+                var isLocal = HttpContext.Request.Host.Host.Contains("localhost") || 
+                             HttpContext.Request.Host.Host.StartsWith("127.0.0.1") ||
+                             string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME"));
                 
-                return Redirect(logoutUrl);
+                if (isLocal)
+                {
+                    // For local development, clear session and redirect to home
+                    if (HttpContext.Session.IsAvailable)
+                    {
+                        HttpContext.Session.Clear();
+                    }
+                    // Only sign out from Cookie scheme - EasyAuth doesn't support sign-out
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    logger?.LogInformation("Local logout completed for user: {UserId}", userId);
+                    return RedirectToPage("/Index");
+                }
+                else
+                {
+                    // EasyAuth logout - first sign out locally then redirect to EasyAuth endpoint
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    
+                    // Add cache-busting parameter and post_logout_redirect_uri to the logout URL
+                    var cacheBuster = DateTime.UtcNow.Ticks;
+                    var logoutUrl = $"{Request.Scheme}://{Request.Host}/.auth/logout?post_logout_redirect_uri=/&t={cacheBuster}";
+                    
+                    return Redirect(logoutUrl);
+                }
             }
         }
     }
